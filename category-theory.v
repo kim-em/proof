@@ -1,3 +1,7 @@
+(* it is a bit strange that we treat source and target
+as a property of a functor, rather than... part of the
+typing information? *)
+
 Require Import CpdtTactics.
 Set Implicit Arguments.
 
@@ -24,9 +28,7 @@ Structure Category := {
     composition(composition(f)(g))(h) = composition(f)(composition(g)(h))
 }.
 
-Structure Functor := {
-  source: Category;
-  target: Category;
+Structure Functor(source target: Category) := {
   onObjects: source.(object) -> target.(object);
   onMorphisms: forall x y: source.(object),
     source.(hom)(x)(y) -> target.(hom)(onObjects(x))(onObjects(y));
@@ -66,30 +68,33 @@ Next Obligation.
   crush.
 Defined.
 
+(*
 Program Definition castObject { C D: Category } ( Q: C = D ) ( a: C.(object) ) : D.(object) := _.
 Program Definition castMorphism { C D: Category } ( Q: C = D ) { x y: C.(object) } ( a: C.(hom) x y ) : D.(hom) (castObject Q x) (castObject Q y) := _.
+*)
 
-(* Is there a more succinct way of specifying the source and target here? *)
-(* Look at all the horrible casting we need to do. *)
-(* TODO: learn about coercions *)
 (* of course, this isn't the full definition of lax; we need an associativity constraint still! *)
 (* to define the strong case, we need to go back and talk about identities and isomorphisms *)
 
 Structure LaxMonoidalCategory := {
   underlying: Category;
-  tensor: Functor;
-  tensorSource: CartesianProduct(underlying)(underlying) = tensor.(source); 
-  tensorTarget: tensor.(target) = underlying; 
+  tensor: Functor (CartesianProduct underlying underlying) underlying;
   associator:
     forall x y z: underlying.(object),
     underlying.(hom)(
-      castObject(tensorTarget)(tensor.(onObjects)(castObject(tensorSource)(castObject(tensorTarget)(tensor.(onObjects)(castObject(tensorSource)(x,y))), z)))
+      (tensor.(onObjects)((tensor.(onObjects)(x,y)), z))
     )(
-      castObject(tensorTarget)(tensor.(onObjects)(castObject(tensorSource)(x, castObject(tensorTarget)(tensor.(onObjects)(castObject(tensorSource)(y,z))))))
-    )
-    ;
-(*  pentagon:
+      (tensor.(onObjects)(x, (tensor.(onObjects)(y,z))))
+    );
+  pentagon:
     forall w x y z: underlying.(object),
-    *)
+    composition underlying associator(onObjects tensor (w,x))(y)(z) associator(w)(x)(onObjects tensor (y,z)) =
+    composition underlying (
+      composition underlying (
+        ???,
+        ???
+      ),
+      ???
+    );
   (* still todo: pentagon ... *)
 }.
