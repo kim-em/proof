@@ -1,13 +1,21 @@
 Require Import CpdtTactics.
-
 Set Implicit Arguments.
 
 Structure Category := {
   object: Type;
   hom: object -> object -> Type;
+  identity: forall a: object, hom(a)(a);
   composition:
     forall a b c: object,
       hom(a)(b) -> hom(b)(c) -> hom(a)(c);
+  leftIdentities:
+    forall a b: object,
+    forall f: hom(a)(b),
+      composition(identity(a))(f) = f;
+  rightIdentities:
+    forall a b: object,
+    forall f: hom(a)(b),
+      composition(f)(identity(b)) = f;
   associativity:
     forall a b c d: object,
     forall f: hom(a)(b),
@@ -16,22 +24,14 @@ Structure Category := {
     composition(composition(f)(g))(h) = composition(f)(composition(g)(h))
 }.
 
-Program Definition NaturalsAsCategory := {|
-  object := True;
-  hom := fun(a: True)(b: True) => nat;
-  composition := fun _ _ _ f g => f + g;
-  associativity := _
-|}.
-Next Obligation.
-  crush.
-Defined.
-
 Structure Functor := {
   source: Category;
   target: Category;
   onObjects: source.(object) -> target.(object);
   onMorphisms: forall x y: source.(object),
     source.(hom)(x)(y) -> target.(hom)(onObjects(x))(onObjects(y));
+  identities: forall x: source.(object),
+    onMorphisms(x)(x)(source.(identity)(x)) = target.(identity)(onObjects(x));
   functoriality:
     forall x y z: source.(object),
     forall f: source.(hom)(x)(y),
@@ -39,46 +39,57 @@ Structure Functor := {
       onMorphisms(x)(z)(source.(composition)(x)(y)(z)(f)(g)) = target.(composition)(onObjects(x))(onObjects(y))(onObjects(z))(onMorphisms(x)(y)(f))(onMorphisms(y)(z)(g))
 }.
 
-
-
-Program Definition DoublingAsFunctor := {|
-  source := NaturalsAsCategory;
-  target := NaturalsAsCategory;
-  onObjects := fun(a: True) => a;
-  onMorphisms := fun _ _ x => 2 * x;
-  functoriality := _
-|}.
-Next Obligation.
-  crush.
-Defined.
-
-(* Can use pattern matching in the arguments, instead of writing fst and snd everywhere? *)
+(* Can we use pattern matching in the arguments, instead of writing fst and snd everywhere? *)
 
 Program Definition CartesianProduct(C: Category)(D: Category): Category := {|
   object := (C.(object) * D.(object)) % type;
   hom := fun p q => ((hom C (fst p) (fst q)) * (hom D (snd p) (snd q))) % type;
+  identity := fun p => (identity C (fst p), identity D (snd p));
   composition := fun a b c f g => (C.(composition) (fst a) (fst b) (fst c) (fst f) (fst g), D.(composition) (snd a) (snd b) (snd c) (snd f) (snd g));
+  leftIdentities := _;
+  rightIdentities := _;
   associativity := _
 |}.
 Next Obligation.
-  pose (assocC := associativity C).
-  pose (assocD := associativity D).
+  pose (leftIdentities C).
+  pose (leftIdentities D).
+  crush.
+Defined.
+Next Obligation.
+  pose (rightIdentities C).
+  pose (rightIdentities D).
+  crush.
+Defined.
+Next Obligation.
+  pose (associativity C).
+  pose (associativity D).
   crush.
 Defined.
 
-Check CartesianProduct.
+Program Definition castObject { C D: Category } ( Q: C = D ) ( a: C.(object) ) : D.(object) := _.
+Program Definition castMorphism { C D: Category } ( Q: C = D ) { x y: C.(object) } ( a: C.(hom) x y ) : D.(hom) (castObject Q x) (castObject Q y) := _.
 
 (* Is there a more succinct way of specifying the source and target here? *)
+(* Look at all the horrible casting we need to do. *)
+(* TODO: learn about coercions *)
 (* of course, this isn't the full definition of lax; we need an associativity constraint still! *)
 (* to define the strong case, we need to go back and talk about identities and isomorphisms *)
 
 Structure LaxMonoidalCategory := {
   underlying: Category;
   tensor: Functor;
-  tensorSource: tensor.(source) = CartesianProduct(underlying)(underlying); 
+  tensorSource: CartesianProduct(underlying)(underlying) = tensor.(source); 
   tensorTarget: tensor.(target) = underlying; 
   associator:
     forall x y z: underlying.(object),
-    underlying.(hom)(tensor.(onObjects)((tensor.(onObjects)((x,y))), z))(tensor.(onObjects)((x, tensor.(onObjects)((y,z)))));
-  (* pentagon ... *)
+    underlying.(hom)(
+      castObject(tensorTarget)(tensor.(onObjects)(castObject(tensorSource)(castObject(tensorTarget)(tensor.(onObjects)(castObject(tensorSource)(x,y))), z)))
+    )(
+      castObject(tensorTarget)(tensor.(onObjects)(castObject(tensorSource)(x, castObject(tensorTarget)(tensor.(onObjects)(castObject(tensorSource)(y,z))))))
+    )
+    ;
+(*  pentagon:
+    forall w x y z: underlying.(object),
+    *)
+  (* still todo: pentagon ... *)
 }.
