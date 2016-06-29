@@ -1,14 +1,16 @@
 Require Import CpdtTactics.
 Set Implicit Arguments.
 
+Generalizable Variables a b c d.
+
 Structure Category := {
   object: Type;
   hom: object -> object -> Type;
   identity ( a: object ): hom a a;
   composition { a b c: object }: hom a b -> hom b c -> hom a c;
-  leftIdentities { a b: object }( f: hom a b ): composition (identity a) f = f;
-  rightIdentities { a b: object }( f: hom a b ): composition f (identity b) = f;
-  associativity { a b c d: object }( f: hom a b )( g: hom b c )( h: hom c d ):
+  leftIdentities `( f: hom a b ): composition (identity a) f = f;
+  rightIdentities `( f: hom a b ): composition f (identity b) = f;
+  associativity `( f: hom a b )`( g: hom b c )`( h: hom c d ):
     composition (composition f g) h = composition f (composition g h);
 }.
 
@@ -18,17 +20,16 @@ Program Definition NaturalsAsCategory: Category := {|
   identity := fun _ => 0;
   composition := fun _ _ _ f g => f + g;
 |}.
-Next Obligation.
+Next Obligation. 
   crush.
 Defined.
 
 Structure Functor(source target: Category) := {
   onObjects: object source -> object target;
-  onMorphisms { x y: object source }:
-    hom source x y -> hom target (onObjects x) (onObjects y);
-  identities( x: object source ):
-    onMorphisms (identity source x) = identity target (onObjects x);
-  functoriality { x y z: object source }( f: hom source x y )( g: hom source y z):
+  onMorphisms: forall `(hom source a b), hom target (onObjects a) (onObjects b);
+  identities( a: object source ):
+    onMorphisms (identity source a) = identity target (onObjects a);
+  functoriality `( f: hom source a b )`( g: hom source b c):
       onMorphisms (composition source f g) = composition target (onMorphisms f) (onMorphisms g)
 }.
 
