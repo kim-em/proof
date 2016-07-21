@@ -1,4 +1,5 @@
 Require Import CpdtTactics.
+Obligation Tactic := crush.
 Set Implicit Arguments.
 
 Generalizable Variables a b c d.
@@ -20,9 +21,6 @@ Program Definition NaturalsAsCategory: Category := {|
   identity := fun _ => 0;
   composition := fun _ _ _ f g => f + g;
 |}.
-Next Obligation. 
-  crush.
-Defined.
 
 Set Automatic Coercions Import.
 Require groups.
@@ -35,13 +33,23 @@ Program Definition SemigroupMorphismComposition { X Y Z: groups.Semigroup } ( f:
   groups.map := fun x => g(f x)
 |}.
 Next Obligation.
-  pose (groups.intertwinesMultiplication f).
+  pose (groups.intertwinesMultiplication _ _ f).
+  pose (groups.intertwinesMultiplication _ _ g).
+  crush.
+Defined.
 
 Program Definition SemigroupsAsCategory: Category := {|
   object := groups.Semigroup;
   hom := groups.SemigroupMorphism;
-  identity := SemigroupIdentity
+  identity := SemigroupIdentity;
+  composition := @SemigroupMorphismComposition;
 |}.
+Next Obligation.
+Admitted.
+Next Obligation.
+Admitted.
+Next Obligation.
+Admitted.
 
 Structure Functor(source target: Category) := {
   onObjects: object source -> object target;
@@ -57,9 +65,6 @@ Program Definition DoublingAsFunctor: Functor NaturalsAsCategory NaturalsAsCateg
   onMorphisms := fun _ _ x => 2 * x;
   functoriality := _
 |}.
-Next Obligation.
-  crush.
-Defined.
 
 (* Can we use pattern matching in the arguments, instead of writing fst and snd everywhere? *)
 
@@ -118,9 +123,6 @@ Program Definition TensorProductOfNaturals: Functor (CartesianProduct NaturalsAs
   onObjects := fun a => fst a;
   onMorphisms := fun _ _ p => (fst p) + (snd p);
 |}.
-Next Obligation.
-  crush.
-Defined.
 
 Eval compute in onMorphisms TensorProductOfNaturals (2,7).
 

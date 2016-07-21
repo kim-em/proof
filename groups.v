@@ -1,4 +1,5 @@
-Require Coq.Program.Tactics.
+Require Import CpdtTactics.
+Set Implicit Arguments.
 
 Structure Semigroup := {
   element: Type;
@@ -11,15 +12,19 @@ Structure SemigroupMorphism(source target: Semigroup) := {
   intertwinesMultiplication(x y: element source): map (multiplication source x y) = multiplication target (map x) (map y);
 }.
 
+Program Definition SemigroupIdentity(G: Semigroup): SemigroupMorphism G G := {|
+  map := fun x => x;
+|}.
+
 Program Definition SemigroupMorphismComposition { X Y Z: Semigroup } ( f: SemigroupMorphism X Y ) ( g: SemigroupMorphism Y Z ): SemigroupMorphism X Z := {|
   map := fun x => g(f x)
 |}.
 Next Obligation.
   pose (intertwinesMultiplication f).
+  pose (intertwinesMultiplication g).
+  crush.
+Defined.
 
-Program Definition SemigroupIdentity(G: Semigroup): SemigroupMorphism G G := {|
-  map := fun x => x;
-|}.
 
 
 
@@ -50,15 +55,13 @@ Require Import ZArith.
 Open Scope Z_scope.
 
 Require Import CpdtTactics.
+Obligation Tactic := crush.
 
 Program Definition IntegersAsSemigroup: Semigroup := {|
   element := Z;
   multiplication := fun a b => a + b;
   associativity := _;
 |}.
-Next Obligation.
-  crush.
-Defined.
 
 Program Definition IntegersAsMonoid: Monoid := {|
   underlyingSemigroup := IntegersAsSemigroup;
@@ -66,9 +69,6 @@ Program Definition IntegersAsMonoid: Monoid := {|
   leftIdentity := _;
   rightIdentity := _;
 |}.
-Next Obligation.
-  crush.
-Defined.
 
 Program Definition IntegersAsGroup: Group := {|
   underlyingMonoid := IntegersAsMonoid;
@@ -76,9 +76,3 @@ Program Definition IntegersAsGroup: Group := {|
   leftInverseIdentity := _;
   rightInverseIdentity := _;
 |}.
-Next Obligation.
-  crush.
-Defined.
-Next Obligation.
-  crush.
-Defined.
