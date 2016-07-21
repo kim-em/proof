@@ -24,6 +24,25 @@ Next Obligation.
   crush.
 Defined.
 
+Set Automatic Coercions Import.
+Require groups.
+
+Program Definition SemigroupIdentity(G: groups.Semigroup): groups.SemigroupMorphism G G := {|
+  groups.map := fun x => x;
+|}.
+
+Program Definition SemigroupMorphismComposition { X Y Z: groups.Semigroup } ( f: groups.SemigroupMorphism X Y ) ( g: groups.SemigroupMorphism Y Z ): groups.SemigroupMorphism X Z := {|
+  groups.map := fun x => g(f x)
+|}.
+Next Obligation.
+  pose (groups.intertwinesMultiplication f).
+
+Program Definition SemigroupsAsCategory: Category := {|
+  object := groups.Semigroup;
+  hom := groups.SemigroupMorphism;
+  identity := SemigroupIdentity
+|}.
+
 Structure Functor(source target: Category) := {
   onObjects: object source -> object target;
   onMorphisms: forall `(hom source a b), hom target (onObjects a) (onObjects b);
@@ -120,7 +139,7 @@ Structure Inverse { category: Category } { source target: object category } ( ma
 
 Structure MonoidalCategory := {
   underlyingLax :> LaxMonoidalCategory;
-  strength(x y z : object (underlying underlyingLax)): Inverse(associator underlyingLax x y z);
+  strength(x y z : object underlyingLax): Inverse(associator underlyingLax x y z);
 }.
 
 Program Definition NaturalsAsMonoidalCategory: MonoidalCategory := {|
@@ -129,3 +148,5 @@ Program Definition NaturalsAsMonoidalCategory: MonoidalCategory := {|
 |}.
 Next Obligation.
 Admitted.
+
+Eval compute in object NaturalsAsMonoidalCategory.
