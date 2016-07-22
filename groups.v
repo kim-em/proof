@@ -1,4 +1,5 @@
 Require Import CpdtTactics.
+Obligation Tactic := crush.
 Set Implicit Arguments.
 
 Structure Semigroup := {
@@ -25,8 +26,8 @@ Next Obligation.
   crush.
 Defined.
 
-
-
+Lemma SemigroupIdentityIsLeftIdentity(X: Semigroup) { Y: Semigroup } ( f: SemigroupMorphism X Y ): SemigroupMorphismComposition (SemigroupIdentity X) f = f.
+Admitted.
 
 Structure Monoid := {
   underlyingSemigroup :> Semigroup;
@@ -53,9 +54,6 @@ Structure GroupMorphism(source target: Group) := {
 
 Require Import ZArith.
 Open Scope Z_scope.
-
-Require Import CpdtTactics.
-Obligation Tactic := crush.
 
 Program Definition IntegersAsSemigroup: Semigroup := {|
   element := Z;
