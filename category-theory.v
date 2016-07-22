@@ -25,6 +25,7 @@ Program Definition NaturalsAsCategory: Category := {|
 Set Automatic Coercions Import.
 Require groups.
 
+(*
 Program Definition SemigroupIdentity(G: groups.Semigroup): groups.SemigroupMorphism G G := {|
   groups.map := fun x => x;
 |}.
@@ -37,13 +38,19 @@ Next Obligation.
   pose (groups.intertwinesMultiplication _ _ g).
   crush.
 Defined.
+*)
 
 Program Definition SemigroupsAsCategory: Category := {|
   object := groups.Semigroup;
   hom := groups.SemigroupMorphism;
-  identity := SemigroupIdentity;
-  composition := @SemigroupMorphismComposition;
+  identity := fun _ => groups.Build_SemigroupMorphism _ _ ( fun x => x ) _;
+  composition := fun _ _ _ f g => groups.Build_SemigroupMorphism _ _ ( fun x => g (f x) ) _;
 |}.
+Next Obligation.
+  pose (groups.intertwinesMultiplication f).
+  pose (groups.intertwinesMultiplication g).
+  crush.
+Defined.
 Next Obligation.
 Admitted.
 Next Obligation.
@@ -63,7 +70,6 @@ Structure Functor(source target: Category) := {
 Program Definition DoublingAsFunctor: Functor NaturalsAsCategory NaturalsAsCategory := {|
   onObjects := fun(a: True) => a;
   onMorphisms := fun _ _ x => 2 * x;
-  functoriality := _
 |}.
 
 (* Can we use pattern matching in the arguments, instead of writing fst and snd everywhere? *)
@@ -73,9 +79,6 @@ Program Definition CartesianProduct(C: Category)(D: Category): Category := {|
   hom := fun p q => ((hom C (fst p) (fst q)) * (hom D (snd p) (snd q))) % type;
   identity := fun p => (identity C (fst p), identity D (snd p));
   composition := fun _ _ _ f g => (composition C (fst f) (fst g), composition D (snd f) (snd g));
-  leftIdentities := _;
-  rightIdentities := _;
-  associativity := _
 |}.
 Next Obligation.
   pose (@leftIdentities C). (* the @ here prevents Coq from trying to fill the implicit arguments *)
@@ -132,6 +135,16 @@ Program Definition NaturalsAsLaxMonoidalCategory: LaxMonoidalCategory := {|
   associator := fun(x y z: True) => 0;
 |}.
 
+(*
+Program Definition TensorProductOfSemigroups: Functor (CartesianProduct SemigroupsAsCategory SemigroupsAsCategory) SemigroupsAsCategory := {|
+  onObjects := fun a => groups.CartesianProduct (fst a) (snd a);
+|}.
+
+Program Definition SemigroupsAsLaxMonoidalCategory: LaxMonoidalCategory := {|
+  underlying := SemigroupsAsCategory;
+  tensor := TensorProductOfSemigroups;
+|}
+*)
 
 Structure Inverse { category: Category } { source target: object category } ( map: hom category source target ) := {
   inverse: hom category target source;

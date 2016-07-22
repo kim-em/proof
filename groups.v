@@ -13,9 +13,7 @@ Structure SemigroupMorphism(source target: Semigroup) := {
   intertwinesMultiplication(x y: element source): map (multiplication source x y) = multiplication target (map x) (map y);
 }.
 
-Program Definition SemigroupIdentity(G: Semigroup): SemigroupMorphism G G := {|
-  map := fun x => x;
-|}.
+Print SemigroupMorphism.
 
 Program Definition SemigroupMorphismComposition { X Y Z: Semigroup } ( f: SemigroupMorphism X Y ) ( g: SemigroupMorphism Y Z ): SemigroupMorphism X Z := {|
   map := fun x => g(f x)
@@ -26,8 +24,25 @@ Next Obligation.
   crush.
 Defined.
 
+(*
+Program Definition SemigroupIdentity(G: Semigroup): SemigroupMorphism G G := {|
+  map := fun x => x;
+|}.
+
 Lemma SemigroupIdentityIsLeftIdentity(X: Semigroup) { Y: Semigroup } ( f: SemigroupMorphism X Y ): SemigroupMorphismComposition (SemigroupIdentity X) f = f.
 Admitted.
+*)
+
+Program Definition CartesianProduct(X: Semigroup)(Y: Semigroup): Semigroup := {|
+  element := (element X * element Y) % type;
+  multiplication := fun f g => (multiplication X (fst f) (fst g), multiplication Y (snd f) (snd g));
+|}.
+Next Obligation.
+  pose (associativity X).
+  pose (associativity Y).
+  crush.
+Defined.
+
 
 Structure Monoid := {
   underlyingSemigroup :> Semigroup;
