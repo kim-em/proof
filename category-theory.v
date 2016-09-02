@@ -22,8 +22,10 @@ Program Definition NaturalsAsCategory: Category := {|
   composition := fun _ _ _ f g => f + g;
 |}.
 
+(*
 Set Automatic Coercions Import.
 Require groups.
+*)
 
 (*
 Program Definition SemigroupIdentity(G: groups.Semigroup): groups.SemigroupMorphism G G := {|
@@ -40,6 +42,7 @@ Next Obligation.
 Defined.
 *)
 
+(*
 Program Definition SemigroupsAsCategory: Category := {|
   object := groups.Semigroup;
   hom := groups.SemigroupMorphism;
@@ -57,10 +60,11 @@ Next Obligation.
 Admitted.
 Next Obligation.
 Admitted.
+*)
 
 Structure Functor(source target: Category) := {
   onObjects: object source -> object target;
-  onMorphisms: forall `(hom source a b), hom target (onObjects a) (onObjects b);
+  onMorphisms `(hom source a b): hom target (onObjects a) (onObjects b);
   identities( a: object source ):
     onMorphisms (identity source a) = identity target (onObjects a);
   functoriality `( f: hom source a b )`( g: hom source b c):
@@ -68,13 +72,12 @@ Structure Functor(source target: Category) := {
 }.
 
 Program Definition DoublingAsFunctor: Functor NaturalsAsCategory NaturalsAsCategory := {|
-  onObjects := fun(a: True) => a;
   onMorphisms := fun _ _ x => 2 * x;
 |}.
 
 (* Can we use pattern matching in the arguments, instead of writing fst and snd everywhere? *)
 
-Program Definition CartesianProduct(C: Category)(D: Category): Category := {|
+Program Definition CartesianProduct(C D: Category): Category := {|
   object := (object C * object D) % type;
   hom := fun p q => ((hom C (fst p) (fst q)) * (hom D (snd p) (snd q))) % type;
   identity := fun p => (identity C (fst p), identity D (snd p));
