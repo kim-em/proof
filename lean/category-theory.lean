@@ -18,6 +18,8 @@ namespace Category
   --infixr `∘` := compose _ _ _ _
   infixl `⟶` :25 := Hom _
   --definition Mor := Hom
+  variables C : Category
+  variables {a b c d : Obj C} 
 end Category
 
 open Category
@@ -30,7 +32,11 @@ definition ℕCategory : Category :=
      Id      := λ A, 0,
      compose := λ A B C, add,
 
-     Id_left  := λ A B, zero_add,
+     Id_left  := begin
+                   intros,
+                   generalize f,
+                   exact zero_add
+                 end,
      Id_right := λ A B, add_zero,
      assoc    := λ A B C D, nat.add_assoc ⦄
 
