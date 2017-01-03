@@ -2,3 +2,6 @@
 .*.aux
 *.glob
 *.vo
+
+*/#*.lean#
+scratch.lean
