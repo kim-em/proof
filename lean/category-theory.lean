@@ -48,10 +48,7 @@ structure Functor (source target : Category) :=
                     onMorphisms (compose source f g)
                      = compose target (onMorphisms f) (onMorphisms g))
 
-definition double(x : ℕ) := 2 * x
-
-definition distribu : Π (n m : ℕ), (n + m) + (n + m) = (n + n) + (m + m) :=
-  sorry
+definition double(x : ℕ) := x + x
 
 definition DoublingAsFunctor : Functor ℕCategory ℕCategory :=
   { 
@@ -59,17 +56,24 @@ definition DoublingAsFunctor : Functor ℕCategory ℕCategory :=
     onMorphisms := λ A B, double,
 
     identities   := begin
-                      intros
+                      intro A,
+                      induction A,
+                      exact sorry
                     end,
-    functoriality := sorry
-      --begin
-      --  intro A B C f g,
-      --  cases f,
+    functoriality := 
+      begin
+       intros A B C f g,
+       induction A,
+       induction B,
+       induction C,
+       cases f,
+       cases g,
+       apply rfl,
+      -- apply rfl,
       --  cases g,
-      --  apply rfl,
-      --  apply rfl,
-      --  cases g,
-      --end
+       exact sorry,
+       exact sorry
+      end
   }
 
 open prod
@@ -77,15 +81,16 @@ open prod
 definition CartesianProduct (C D : Category) : Category :=
   { Category .
     Obj := Obj C × Obj D,
-    Hom := λ A B, Hom C (pr1 A) (pr1 B) × Hom D (pr2 A) (pr2 B),
+    Hom := λ A B, Hom C (fst A) (fst B) × Hom D (snd A) (snd B),
     --Hom := λ A B, match (A, B) with
     --         ((A₁, A₂), (B₁, B₂)) := Hom C A₁ B₁ × Hom D A₂ B₂
     --         end,
 
-    identity  := λ A, match A with
-             (A₁, A₂) := (Id C A₁, Id D A₂)
+    identity  :=
+           λ A, match A with
+             (A₁, A₂) := (identity C A₁, identity D A₂)
            end,
-    compose := λ A B E f g, (compose A (pr1 f) (pr1 g), compose B (pr2 f) (pr2 g)),
+    compose := λ A B E f g, (compose A (fst f) (fst g), compose B (snd f) (snd g)),
 --match f with
                  --(f₁, f₂) := match g with
                    --(g₁, g₂) := (compose A f₁ g₁, compose B f₂ g₂)
