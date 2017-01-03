@@ -22,6 +22,8 @@ language and proof system, has many appealing features.)
 
 ## Coq ##
 
+... TODO ...
+
 ## Lean ##
 
 You can run Lean directly in a web browser, or install it locally.
@@ -55,15 +57,44 @@ You'll need to
 * set up Emacs
 
 #### Downloading the Lean source code ####
-Make sure you've got a copy
+Make sure you've got a copy of `git` installed. On most systems this is
+already available; there is also a nice graphical frontend available, called 
+[SourceTree](https://www.sourcetreeapp.com/).
 
 If you've already got a github account, and know about using git over ssh, use
 the `git` URLs below. Otherwise, use the `https` URLs.
 
+At the command line, run `git clone URL`, where URL is one of
 
+* https://github.com/leanprover/lean.git
+* git@github.com:leanprover/lean.git
 
+(for the development branch, which doesn't support HoTT)
+
+* https://github.com/leanprover/lean2.git
+* git@github.com:leanprover/lean2.git
+
+(for the HoTT snapshot).
+
+This will create a subdirectory `lean` or `lean2` wherever you run the
+command. It's fine to put this wherever you like, but you'll need to tell
+Emacs the path later.
 
 #### Compiling Lean ####
+Compiling Lean has some prerequisites. If you are on OS X, I would recommend
+installing [Macports](https://www.macports.org/install.php), and then running
+the command `sudo port install cmake gmp mpfr google-perftools ninja`. If you
+are on Windows, follow the instructions at
+https://github.com/leanprover/lean/blob/master/doc/make/msys2.md. If you're on
+Linux, you enjoy this sort of thing, don't you?
+
+When you're ready to compile go into the `lean` or `lean2` directory, and run
+the commands
+
+    mkdir -p build/debug
+    cd build/debug
+    cmake -DCMAKE_BUILD_TYPE=DEBUG -G Ninja ../../src
+    ninja
 
 #### Setting up the Lean Emacs mode ####
 You'll need Emacs, at least version 24.
