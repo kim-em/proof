@@ -2,3 +2,8 @@
 .*.aux
 *.glob
 *.vo
+*~
+*.agdai
+*.agda#
+*.clean
+tutorials
