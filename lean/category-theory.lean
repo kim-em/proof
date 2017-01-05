@@ -5,35 +5,37 @@ class Category :=
   (Obj : Type)
   (Hom : Obj → Obj → Type)
   
-  (Id : Π A : Obj, Hom A A)
-  (compose : Π ⦃A B C : Obj⦄, Hom B C → Hom A B → Hom A C)
+  (identity : Π A : Obj, Hom A A)
+  (compose : Π ⦃A B C : Obj⦄, Hom A B → Hom B C → Hom A C)
 
-  (Id_left  : Π ⦃A B : Obj⦄ (f : Hom A B), compose (Id _) f = f)
-  (Id_right : Π ⦃A B : Obj⦄ (f : Hom A B), compose f (Id _) = f)
-  (assoc : Π ⦃A B C D : Obj⦄ (f : Hom C D) (g : Hom B C) (h : Hom A B),
+  (left_identity  : Π ⦃A B : Obj⦄ (f : Hom A B), compose (identity _) f = f)
+  (right_identity : Π ⦃A B : Obj⦄ (f : Hom A B), compose f (identity _) = f)
+  (associativity  : Π ⦃A B C D : Obj⦄ (f : Hom A B) (g : Hom B C) (h : Hom C D),
     compose (compose f g) h = compose f (compose g h))
 
 namespace Category
   -- Can we put this before the definition?
-  notation f `∘` g := compose _ f g
-  infix `⟶` :25 := Hom _
+  notation f ∘ g := compose _ _ _ _ f g
+  -- infixr `∘` := compose _ _ _ _
+  infixl `⟶` :25 := Hom _
 
   --def Mor := Hom
 end Category
 
-open Category 
-
 instance ℕCategory : Category :=
   { Category .
-    Obj     := unit,
-    Hom     := λ a b, ℕ,
-    Id      := λ a, 0,
-    compose := λ a b c, add,
+    Obj      := unit,
+    Hom      := λ a b, ℕ,
+    identity := λ a, 0,
+    compose  := λ a b c, add,
 
-    Id_left  := λ a b, zero_add,
-    Id_right := λ a b, add_zero,
-    assoc    := λ a b c d, add_assoc }
+    left_identity  := λ a b, zero_add,
+    right_identity := λ a b, add_zero,
+    associativity  := λ a b c d, add_assoc }
 
+-- This is how Coq's program directive does it under the
+-- hood. Everything after the refine line should be able to be
+-- replaced by a single tactic (like crush).
 instance ℕCategory' : Category :=
 begin
   refine (Category.mk unit (λ a b, ℕ) (λ a, 0) (λ a b c, add) _ _ _),
@@ -45,21 +47,22 @@ begin
   exact add_assoc
 end
 
---structure Functor {obj : Type} [source : Category obj] :=
--- (onObj : obj) 
--- (onMor : Π {a b : obj}, Hom _ a b → Hom _ a b)
+open Category 
+
+-- This needs to use typeclasses; still trying to figure that out
+
 --class Functor (Obj₁ Obj₂ : Type) [source : Category Obj₁] [target : Category Obj₂] :=
---  (onObj : source → target)
-  --(onMor : Π ⦃a b : Obj source⦄, Hom _ a b → Hom _ (onObj a) (onObj b))
-  --
-  --(respect_Id   : Π (a : Obj source), onMor (Id _ a) = Id _ (onObj a))
-  --(respect_comp : Π ⦃a b c : Obj source⦄ (f : Hom _ b c) (g : Hom _ a b),
-  --                  onMor (f ∘ g) = onMor f ∘ onMor g)
+--  (onObjects     : source → target)
+--  (onMorphisms   : Π ⦃a b : Obj source⦄, Hom _ a b → Hom _ (onObjects a) (onObjects b))
+--  
+--  (identities    : Π (a : Obj source), onMorphisms (Id _ a) = Id _ (onObjects a))
+--  (functoriality : Π ⦃a b c : Obj source⦄ (f : Hom _ a b) (g : Hom _ b c),
+--                    onMorphisms (f ∘ g) = onMorphisms f ∘ onMorphisms g)
 
 --namespace Functor
---  infix `<$>`:50 := λ {C D : Category} (F : Functor C D) (a : Obj C), onObj F a
+--  infix `<$>`:50 := λ {C D : Category} (F : Functor C D) (a : Obj C), onObjects F a
 --  infix `<$>m`:50 := λ {C D : Category} (F : Functor C D) {a b : Obj C}
---                        (f : Hom _ a b), onMor F f
+--                        (f : Hom _ a b), onMorphisms F f
 --end Functor
 --
 --open function
@@ -83,30 +86,32 @@ end
 --                    intros,
 --                    exact double_order f g f g
 --                    end }
---
---open prod
---
---theorem pair_eq {A B : Type} {a₁ a₂ : A} {b₁ b₂ : B} : a₁ = a₂ → b₁ = b₂ → (a₁, b₁) = (a₂, b₂) :=
---assume H1 H2, H1 ▸ H2 ▸ rfl
---
-open prod
 
-theorem pair_eq {A B : Type} {a₁ a₂ : A} {b₁ b₂ : B} : a₁ = a₂ → b₁ = b₂ → (a₁, b₁) = (a₂, b₂) :=
+
+-- This was a part of the standard library in Lean 2. Let's put it in
+-- until they add it again.
+theorem pair_eq {A B : Type} {a₁ a₂ : A} {b₁ b₂ : B} :
+    a₁ = a₂ → b₁ = b₂ → (a₁, b₁) = (a₂, b₂) :=
 assume H1 H2, H1 ▸ H2 ▸ rfl
 
-instance ProductCategory (C D : Category) [Category] [Category] : Category :=
-  { Category .
-    Obj := Obj C × Obj D,
-    Hom := λ a b, Hom C (fst a) (fst b) × Hom D (snd a) (snd b),
-    Id  := λ a, (Id C (fst a), Id D (snd a)),
-    compose := λ a b c f g, (fst f ∘ fst g, snd f ∘ snd g),
+open prod
 
-    Id_left  := λ a b c d, pair_eq (Id_left C _) (Id_left D _) ,
-    Id_right := λ a b c d, pair_eq (Id_right C _) (Id_right D _),
-    assoc    := begin
-                intros,
-                --exact pair_eq (assoc C _ _ _ _ _) (assoc D _ _ _ _ _)
-                end }
+-- Needs to use typeclasses again.
+
+--instance ProductCategory (C D : Category) [Category] [Category] : Category :=
+--  { Category .
+--    Obj := Obj C × Obj D,
+--    Hom := λ a b, Hom C (fst a) (fst b) × Hom D (snd a) (snd b),
+--
+--    identity := λ a, (identity C (fst a), identity D (snd a)),
+--    compose  := λ a b c f g, (fst f ∘ fst g, snd f ∘ snd g),
+--
+--    left_identities  := λ a b c d, pair_eq (left_identity  C _) (left_identity  D _) ,
+--    right_identities := λ a b c d, pair_eq (right_identity C _) (right_identity D _),
+--    associativity := begin
+--                     intros,
+--                     exact pair_eq (assoc C _ _ _ _ _) (assoc D _ _ _ _ _)
+--                     end }
 --
 --namespace ProductCategory
 --  notation C `×c` D := ProductCategory C D

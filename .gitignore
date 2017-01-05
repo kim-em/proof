@@ -7,3 +7,5 @@
 *.agda#
 *.clean
 tutorials
+*/#*.lean#
+scratch.lean
