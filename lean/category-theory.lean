@@ -1,7 +1,7 @@
 import standard
 --import data.nat
 
-class Category :=
+structure Category :=
   (Obj : Type)
   (Hom : Obj → Obj → Type)
   
@@ -22,6 +22,7 @@ namespace Category
   --def Mor := Hom
 end Category
 
+/-
 instance ℕCategory : Category :=
   { Category .
     Obj      := unit,
@@ -46,14 +47,17 @@ begin
   intros A B C D,
   exact add_assoc
 end
+-/
 
 open Category 
 
+print Category
+
 -- This needs to use typeclasses; still trying to figure that out
 
---class Functor (Obj₁ Obj₂ : Type) [source : Category Obj₁] [target : Category Obj₂] :=
---  (onObjects     : source → target)
---  (onMorphisms   : Π ⦃a b : Obj source⦄, Hom _ a b → Hom _ (onObjects a) (onObjects b))
+class Functor (source target : Category) :=
+  (onObjects     : Obj source → Obj target)
+  (onMorphisms   : Π ⦃a b : Obj source⦄, Hom _ a b → Hom _ (onObjects a) (onObjects b))
 --  
 --  (identities    : Π (a : Obj source), onMorphisms (Id _ a) = Id _ (onObjects a))
 --  (functoriality : Π ⦃a b c : Obj source⦄ (f : Hom _ a b) (g : Hom _ b c),
