@@ -1,7 +1,7 @@
 import standard
-import data.nat
+--import data.nat
 
-structure Category :=
+class Category :=
   (Obj : Type)
   (Hom : Obj → Obj → Type)
   
@@ -18,13 +18,12 @@ namespace Category
   notation f `∘` g := compose _ f g
   infix `⟶` :25 := Hom _
 
-  def Mor := Hom
+  --def Mor := Hom
 end Category
 
 open Category 
 
-@[reducible]
-def ℕCategory : Category :=
+instance ℕCategory : Category :=
   { Category .
     Obj     := unit,
     Hom     := λ a b, ℕ,
@@ -35,8 +34,7 @@ def ℕCategory : Category :=
     Id_right := λ a b, add_zero,
     assoc    := λ a b c d, add_assoc }
 
-@[reducible]
-def ℕCategory' : Category :=
+instance ℕCategory' : Category :=
 begin
   refine (Category.mk unit (λ a b, ℕ) (λ a, 0) (λ a b c, add) _ _ _),
   intros A B,
@@ -47,48 +45,56 @@ begin
   exact add_assoc
 end
 
-structure Functor (source target : Category) : Type :=
-  (onObj : Obj source → Obj target)
-  (onMor : Π ⦃a b : Obj source⦄, Hom _ a b → Hom _ (onObj a) (onObj b))
-  
-  (respect_Id   : Π (a : Obj source), onMor (Id _ a) = Id _ (onObj a))
-  (respect_comp : Π ⦃a b c : Obj source⦄ (f : Hom _ b c) (g : Hom _ a b),
-                    onMor (f ∘ g) = onMor f ∘ onMor g)
+--structure Functor {obj : Type} [source : Category obj] :=
+-- (onObj : obj) 
+-- (onMor : Π {a b : obj}, Hom _ a b → Hom _ a b)
+--class Functor (Obj₁ Obj₂ : Type) [source : Category Obj₁] [target : Category Obj₂] :=
+--  (onObj : source → target)
+  --(onMor : Π ⦃a b : Obj source⦄, Hom _ a b → Hom _ (onObj a) (onObj b))
+  --
+  --(respect_Id   : Π (a : Obj source), onMor (Id _ a) = Id _ (onObj a))
+  --(respect_comp : Π ⦃a b c : Obj source⦄ (f : Hom _ b c) (g : Hom _ a b),
+  --                  onMor (f ∘ g) = onMor f ∘ onMor g)
 
-namespace Functor
-  infix `<$>`:50 := λ {C D : Category} (F : Functor C D) (a : Obj C), onObj F a
-  infix `<$>m`:50 := λ {C D : Category} (F : Functor C D) {a b : Obj C}
-                        (f : Hom _ a b), onMor F f
-end Functor
-
-open function
-
-theorem double_order (n m p q : ℕ) : n + m + (p + q) = n + p + (m + q) :=
-calc
-  n + m + (p + q) = n + (m + (p + q)) : add_assoc n m (p + q)
-              ... = n + (m + p + q)   : eq.symm (congr_arg (add n) (add_assoc m p q))
-              ... = n + (p + m + q)   : congr_arg (add n) (congr_arg (λ n, n + q) (add_comm m p))
-              ... = n + (p + (m + q)) : congr_arg (add n) (add_assoc p m q)
-              ... = n + p + (m + q)   : eq.symm (add_assoc n p (m + q))
-
-@[reducible]
-def DoublingAsFunctor : Functor ℕCategory ℕCategory :=
-  { Functor .
-    onObj := id,
-    onMor := λ a b (n : ℕ), n + n,
-
-    respect_Id   := λ a, rfl,
-    respect_comp := begin
-                    intros,
-                    exact double_order f g f g
-                    end }
-
+--namespace Functor
+--  infix `<$>`:50 := λ {C D : Category} (F : Functor C D) (a : Obj C), onObj F a
+--  infix `<$>m`:50 := λ {C D : Category} (F : Functor C D) {a b : Obj C}
+--                        (f : Hom _ a b), onMor F f
+--end Functor
+--
+--open function
+--
+--theorem double_order (n m p q : ℕ) : n + m + (p + q) = n + p + (m + q) :=
+--calc
+--  n + m + (p + q) = n + (m + (p + q)) : add_assoc n m (p + q)
+--              ... = n + (m + p + q)   : eq.symm (congr_arg (add n) (add_assoc m p q))
+--              ... = n + (p + m + q)   : congr_arg (add n) (congr_arg (λ n, n + q) (add_comm m p))
+--              ... = n + (p + (m + q)) : congr_arg (add n) (add_assoc p m q)
+--              ... = n + p + (m + q)   : eq.symm (add_assoc n p (m + q))
+--
+--@[reducible]
+--def DoublingAsFunctor : Functor ℕCategory ℕCategory :=
+--  { Functor .
+--    onObj := id,
+--    onMor := λ a b (n : ℕ), n + n,
+--
+--    respect_Id   := λ a, rfl,
+--    respect_comp := begin
+--                    intros,
+--                    exact double_order f g f g
+--                    end }
+--
+--open prod
+--
+--theorem pair_eq {A B : Type} {a₁ a₂ : A} {b₁ b₂ : B} : a₁ = a₂ → b₁ = b₂ → (a₁, b₁) = (a₂, b₂) :=
+--assume H1 H2, H1 ▸ H2 ▸ rfl
+--
 open prod
 
 theorem pair_eq {A B : Type} {a₁ a₂ : A} {b₁ b₂ : B} : a₁ = a₂ → b₁ = b₂ → (a₁, b₁) = (a₂, b₂) :=
 assume H1 H2, H1 ▸ H2 ▸ rfl
 
-def ProductCategory (C D : Category) : Category :=
+instance ProductCategory (C D : Category) [Category] [Category] : Category :=
   { Category .
     Obj := Obj C × Obj D,
     Hom := λ a b, Hom C (fst a) (fst b) × Hom D (snd a) (snd b),
@@ -101,32 +107,32 @@ def ProductCategory (C D : Category) : Category :=
                 intros,
                 --exact pair_eq (assoc C _ _ _ _ _) (assoc D _ _ _ _ _)
                 end }
-
-namespace ProductCategory
-  notation C `×c` D := ProductCategory C D
-end ProductCategory
-
-open Functor
-open ProductCategory
-
-structure LaxMonoidalCategory :=
-  (carrier : Category)
-  (tensor : Functor (carrier ×c carrier) carrier)
-  (unit : let obj := Obj carrier in obj)
-
-  (associator : Π (a b c : Obj carrier),
-                  Hom _ (tensor <$> (tensor <$> (a,b), c))
-                       (tensor <$> (a, tensor <$> (b,c))))
-  --(pentagon : Π (a b c d : Obj carrier),
-  --              associator (tensor <$> (a,b)) c d ∘c associator a b (tensor <$> (c,d)) = 
-
---attribute [coercion] LaxMonoidalCategory.carrier
 --
-namespace LaxMonoidalCategory
-  infix `⊗`:70 := λ {C : LaxMonoidalCategory} (a b : Obj C), tensor C <$> (a,b)
-  infix `⊗m`:70 := λ {C : LaxMonoidalCategory} {a b c d : Obj C}
-                      (f : Hom a b) (g : Hom c d), tensor C <$> (f,g)
-end LaxMonoidalCategory
+--namespace ProductCategory
+--  notation C `×c` D := ProductCategory C D
+--end ProductCategory
+--
+--open Functor
+--open ProductCategory
+--
+--structure LaxMonoidalCategory :=
+--  (carrier : Category)
+--  (tensor : Functor (carrier ×c carrier) carrier)
+--  (unit : let obj := Obj carrier in obj)
+--
+--  (associator : Π (a b c : Obj carrier),
+--                  Hom _ (tensor <$> (tensor <$> (a,b), c))
+--                       (tensor <$> (a, tensor <$> (b,c))))
+--  --(pentagon : Π (a b c d : Obj carrier),
+--  --              associator (tensor <$> (a,b)) c d ∘c associator a b (tensor <$> (c,d)) = 
+--
+----attribute [coercion] LaxMonoidalCategory.carrier
+----
+--namespace LaxMonoidalCategory
+--  infix `⊗`:70 := λ {C : LaxMonoidalCategory} (a b : Obj C), tensor C <$> (a,b)
+--  infix `⊗m`:70 := λ {C : LaxMonoidalCategory} {a b c d : Obj C}
+--                      (f : Hom a b) (g : Hom c d), tensor C <$> (f,g)
+--end LaxMonoidalCategory
 
 --@[reducible]
 --def ℕTensorProduct : Functor (ℕCategory ×c ℕCategory) ℕCategory :=
