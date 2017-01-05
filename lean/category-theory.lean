@@ -66,15 +66,16 @@ open Category
 --end Functor
 --
 --open function
---
---theorem double_order (n m p q : ℕ) : n + m + (p + q) = n + p + (m + q) :=
---calc
---  n + m + (p + q) = n + (m + (p + q)) : add_assoc n m (p + q)
---              ... = n + (m + p + q)   : eq.symm (congr_arg (add n) (add_assoc m p q))
---              ... = n + (p + m + q)   : congr_arg (add n) (congr_arg (λ n, n + q) (add_comm m p))
---              ... = n + (p + (m + q)) : congr_arg (add n) (add_assoc p m q)
---              ... = n + p + (m + q)   : eq.symm (add_assoc n p (m + q))
---
+
+-- This clearly shouldn't be here. In Lean 2, this could be done by blast
+theorem double_order (n m p q : ℕ) : n + m + (p + q) = n + p + (m + q) :=
+calc
+  n + m + (p + q) = n + (m + (p + q)) : add_assoc n m (p + q)
+              ... = n + (m + p + q)   : eq.symm (congr_arg (add n) (add_assoc m p q))
+              ... = n + (p + m + q)   : congr_arg (add n) (congr_arg (λ n, n + q) (add_comm m p))
+              ... = n + (p + (m + q)) : congr_arg (add n) (add_assoc p m q)
+              ... = n + p + (m + q)   : eq.symm (add_assoc n p (m + q))
+
 --@[reducible]
 --def DoublingAsFunctor : Functor ℕCategory ℕCategory :=
 --  { Functor .
