@@ -3,13 +3,7 @@ import standard
 meta def blast : tactic unit :=
 using_smt $ return ()
 
-variable Obj : Type
-variable Hom : Obj -> Obj -> Type
--- I'm not sure how to use these in Category, as it keeps assigning
--- them as arguments to Category itself.
-variables (A B C D : Obj) (f : Hom A B) (g : Hom B C) (h : Hom C D)
-
-class Category :=
+structure Category (Obj : Type)(Hom : Obj -> Obj -> Type) :=
   (identity : Π A : Obj, Hom A A)
   (compose  : Π ⦃A B C : Obj⦄, Hom A B → Hom B C → Hom A C)
   
@@ -18,7 +12,9 @@ class Category :=
   (associativity  : Π ⦃A B C D : Obj⦄ (f : Hom A B) (g : Hom B C) (h : Hom C D),
     compose (compose f g) h = compose f (compose g h))
 
-end foo
+attribute [class] Category   -- declaring it as a class from the beginning results in an insane signature ...
+
+print Category
 
 instance ℕCategory : Category unit (λ a b, ℕ) :=
   { identity := λ a, 0,
@@ -35,17 +31,21 @@ instance ℕCategory : Category unit (λ a b, ℕ) :=
 
 open Category
 
-variables { Obj_1 Obj_2 : Type }
-variables { Hom_1 : Obj_1 → Obj_1 → Type } { Hom_2 : Obj_2 → Obj_2 → Type }
+variables { Obj₁ Obj₂ : Type }
+variables { Hom₁ : Obj₁ → Obj₁ → Type } { Hom₂ : Obj₂ → Obj₂ → Type }
 
-class Functor (C₁ : Category Obj_1 Hom_1) (C₂ : Category Obj_2 Hom_2) :=
-  (onObjects   : Obj_1 → Obj_2)
-  (onMorphisms : Π ⦃A B : Obj_1⦄,
-                Hom_1 A B → Hom_2 (onObjects A) (onObjects B))
-  (identities : Π (A : Obj_1),
-    onMorphisms (identity _ A) = identity _ (onObjects A))
-  (functoriality : Π ⦃A B C : Obj_1⦄ (f : Hom_1 A B) (g : Hom_1 B C),
-    onMorphisms (compose _ f g) = compose _ (onMorphisms f) (onMorphisms g))
+structure Functor (C₁ : Category Obj₁ Hom₁) (C₂ : Category Obj₂ Hom₂) :=
+  (onObjects   : Obj₁ → Obj₂)
+  (onMorphisms : Π ⦃A B : Obj₁⦄,
+                Hom₁ A B → Hom₂ (onObjects A) (onObjects B))
+  (identities : Π (A : Obj₁),
+    onMorphisms (identity C₁ A) = identity C₂ (onObjects A))
+  (functoriality : Π ⦃A B C : Obj₁⦄ (f : Hom₁ A B) (g : Hom₁ B C),
+    onMorphisms (compose C₁ f g) = compose C₂ (onMorphisms f) (onMorphisms g))
+
+attribute [class] Functor
+
+print Functor
 
 instance DoublingAsFunctor : Functor ℕCategory ℕCategory :=
   { onObjects   := id,
@@ -56,4 +56,38 @@ instance DoublingAsFunctor : Functor ℕCategory ℕCategory :=
       -- but functoriality still doesn't.
     identities    := by blast,
     functoriality := by blast
+  }
+
+variables { Obj_C Obj_D : Type }
+variables { Hom_C : Obj_C -> Obj_C -> Type } { Hom_D : Obj_D -> Obj_D -> Type }
+
+open prod
+
+instance ProductCategory (C : Category Obj_C Hom_C) (D : Category Obj_D Hom_D) :
+  Category (Obj_C × Obj_D) (λ a b, Hom_C (fst a) (fst b) × Hom_D (snd a) (snd b)) :=
+  { 
+    identity := λ a, (identity C (fst a), identity D (snd a)),
+    compose  := λ a b c f g, (compose C (fst f) (fst g), compose D (snd f) (snd g)),
+
+    left_identity  := begin
+                        intros,
+                        pose x := left_identity C (fst f),
+                        pose y := left_identity D (snd f),
+                        induction f,
+                        blast
+                      end,
+    right_identity :=  begin
+                        intros,
+                        pose x := right_identity C (fst f),
+                        pose y := right_identity D (snd f),
+                        induction f,
+                        blast
+                      end, 
+    associativity  := begin
+                        intros,
+                        pose x := associativity C (fst f) (fst g) (fst h),
+                        pose y := associativity D (snd f) (snd g) (snd h),
+                        induction f,
+                        blast
+                      end 
   }
