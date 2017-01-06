@@ -3,9 +3,8 @@ import standard
 meta def blast : tactic unit :=
 using_smt $ return ()
 
-variables (Obj Obj' : Type)
-variables (Hom : Obj → Obj → Type) (Hom' : Obj' → Obj' → Type)
-
+variable Obj : Type
+variable Hom : Obj -> Obj -> Type
 -- I'm not sure how to use these in Category, as it keeps assigning
 -- them as arguments to Category itself.
 variables (A B C D : Obj) (f : Hom A B) (g : Hom B C) (h : Hom C D)
@@ -18,6 +17,8 @@ class Category :=
   (right_identity : Π ⦃A B : Obj⦄ (f : Hom A B), compose f (identity _) = f)
   (associativity  : Π ⦃A B C D : Obj⦄ (f : Hom A B) (g : Hom B C) (h : Hom C D),
     compose (compose f g) h = compose f (compose g h))
+
+end foo
 
 instance ℕCategory : Category unit (λ a b, ℕ) :=
   { identity := λ a, 0,
@@ -34,18 +35,19 @@ instance ℕCategory : Category unit (λ a b, ℕ) :=
 
 open Category
 
-class Functor (C₁ : Category Obj Hom) (C₂ : Category Obj' Hom') :=
-  (onObjects   : Obj → Obj')
-  (onMorphisms : Π ⦃A B : Obj⦄,
-                Hom A B → Hom' (onObjects A) (onObjects B))
-  (identities : Π (A : Obj),
+variables { Obj_1 Obj_2 : Type }
+variables { Hom_1 : Obj_1 → Obj_1 → Type } { Hom_2 : Obj_2 → Obj_2 → Type }
+
+class Functor (C₁ : Category Obj_1 Hom_1) (C₂ : Category Obj_2 Hom_2) :=
+  (onObjects   : Obj_1 → Obj_2)
+  (onMorphisms : Π ⦃A B : Obj_1⦄,
+                Hom_1 A B → Hom_2 (onObjects A) (onObjects B))
+  (identities : Π (A : Obj_1),
     onMorphisms (identity _ A) = identity _ (onObjects A))
-  (functoriality : Π ⦃A B C : Obj⦄ (f : Hom A B) (g : Hom B C),
+  (functoriality : Π ⦃A B C : Obj_1⦄ (f : Hom_1 A B) (g : Hom_1 B C),
     onMorphisms (compose _ f g) = compose _ (onMorphisms f) (onMorphisms g))
-  
--- Can't we get rid of these underscores? I'm not sure this is a good
--- payoff for saving the parameters in the Functor definition.
-instance DoublingAsFunctor : Functor _ _ _ _ ℕCategory ℕCategory :=
+
+instance DoublingAsFunctor : Functor ℕCategory ℕCategory :=
   { onObjects   := id,
     onMorphisms := (λ A B n, n + n),
       -- Sadly, "by blast" doesn't work below if we replace "n + n"
