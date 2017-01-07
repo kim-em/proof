@@ -129,6 +129,7 @@ structure LaxMonoidalCategory (Obj : Type) (Hom : Obj → Obj → Type)
      Hom (tensor <$> (tensor <$> (A, B), C)) (tensor <$> (A, tensor <$> (B, C))))
 
 attribute [class] LaxMonoidalCategory
+attribute [instance] LaxMonoidalCategory.to_Category
 
 namespace LaxMonoidalCategory
   infix `⊗`:70 := λ {Obj : Type} {Hom : Obj → Obj → Type}
@@ -141,11 +142,6 @@ namespace LaxMonoidalCategory
 end LaxMonoidalCategory
 
 open LaxMonoidalCategory
-
--- This is okay, but surely there's a better way
-instance LaxAsCategory {Obj : Type} {Hom : Obj → Obj → Type}
-         (C : LaxMonoidalCategory Obj Hom) : Category Obj Hom :=
-  ⟨identity C, compose C, left_identity C, right_identity C, associativity C⟩
 
 --theorem LiftForgetLax {Obj : Type} {Hom : Obj → Obj → Type} (C : Category Obj Hom) :
 --        Π {tensor : Functor (C ×c C) C} {unit : Obj}
