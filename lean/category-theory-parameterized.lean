@@ -47,6 +47,10 @@ structure Functor (C₁ : Category Obj₁ Hom₁) (C₂ : Category Obj₂ Hom₂
 
 attribute [class] Functor
 
+-- (Scott:) I wish it were possible to define coercions of Functor to either
+-- onObjects or onMorphisms, so we could just write F A and F f.
+-- (Scott:) I'm not sure what purpose these notations serve: is 'F <$> A' that 
+-- much better than 'onObjects F A' that it warrants introducing notation?
 namespace Functor
   -- Lean complains about the use of local variables in
   -- notation. There must be a way around that.
@@ -80,6 +84,8 @@ variables { Hom_C : Obj_C -> Obj_C -> Type } { Hom_D : Obj_D -> Obj_D -> Type }
 
 open prod
 
+-- TODO(?) Can these proofs be simplified?
+-- Stephen's earlier versions (for Lean 2?) were perhaps better.
 instance ProductCategory (C : Category Obj_C Hom_C) (D : Category Obj_D Hom_D) :
   Category (Obj_C × Obj_D) (λ a b, Hom_C (fst a) (fst b) × Hom_D (snd a) (snd b)) :=
   {
@@ -127,6 +133,7 @@ structure LaxMonoidalCategory (Obj : Type) (Hom : Obj → Obj → Type)
 
   (associator : Π (A B C : Obj),
      Hom (tensor <$> (tensor <$> (A, B), C)) (tensor <$> (A, tensor <$> (B, C))))
+  -- TODO We still need to add the pentagon here!
 
 attribute [class] LaxMonoidalCategory
 attribute [instance] LaxMonoidalCategory.to_Category
@@ -156,3 +163,5 @@ def ℕLaxMonoidalCategory : LaxMonoidalCategory unit (λ A B, ℕ) :=
     associator := λ A B C, Category.identity ℕCategory ()
   }
 
+-- casting is not working: we really want to be able to write the following:
+def foo : Functor ℕLaxMonoidalCategory ℕLaxMonoidalCategory := by sorry
