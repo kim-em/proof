@@ -133,7 +133,26 @@ structure LaxMonoidalCategory (Obj : Type) (Hom : Obj → Obj → Type)
 
   (associator : Π (A B C : Obj),
      Hom (tensor <$> (tensor <$> (A, B), C)) (tensor <$> (A, tensor <$> (B, C))))
-  -- TODO We still need to add the pentagon here!
+/- I tried writing the pentagon, but it doesn't type check. :-(
+  (pentagon : Π (A B C D : Obj),
+     -- we need to compare:
+     -- ((AB)C)D ---> (A(BC))D ---> A((BC)D) ---> A(B(CD))
+     -- ((AB)C)D ---> (AB)(CD) ---> A(B(CD))
+     compose
+       (compose 
+         (tensor <$>m (associator A B C, identity D))
+         (associator A (tensor <$> (B, C)) D)
+       ) (tensor <$>m (identity A, associator B C D)) =
+     compose
+       (associator (tensor <$> (A, B)) C D)
+       (associator A B (tensor <$> (C, D)))
+
+  )
+-/
+
+-- Notice that LaxMonoidalCategory.tensor has a horrible signature...
+-- It sure would be nice if it read ... Functor (carrier ×c carrier) carrier
+print LaxMonoidalCategory
 
 attribute [class] LaxMonoidalCategory
 attribute [instance] LaxMonoidalCategory.to_Category
@@ -164,4 +183,11 @@ def ℕLaxMonoidalCategory : LaxMonoidalCategory unit (λ A B, ℕ) :=
   }
 
 -- casting is not working: we really want to be able to write the following:
-def foo : Functor ℕLaxMonoidalCategory ℕLaxMonoidalCategory := by sorry
+/-
+instance DoublingAsFunctor' : Functor ℕLaxMonoidalCategory ℕLaxMonoidalCategory :=
+  { onObjects   := id,
+    onMorphisms := (λ A B n, n + n),
+    identities    := by blast,
+    functoriality := by blast
+  }
+-/
