@@ -3,7 +3,9 @@ import standard
 meta def blast : tactic unit :=
 using_smt $ return ()
 
-structure Category { Obj : Type } (Hom : Obj -> Obj -> Type) :=
+structure Category :=
+  (Obj : Type)
+  (Hom : Obj -> Obj -> Type)
   (identity : Π A : Obj, Hom A A)
   (compose  : Π ⦃A B C : Obj⦄, Hom A B → Hom B C → Hom A C)
 
@@ -18,8 +20,11 @@ attribute [class] Category
 -- a rough edge.
 -- print Category
 
-instance ℕCategory : Category (λ a b : unit, ℕ) :=
-  { identity := λ a, 0,
+instance ℕCategory : Category :=
+  { 
+    Obj := unit,    
+    Hom := λ a b, ℕ,
+    identity := λ a, 0,
     compose  := λ a b c, add,
 
     left_identity  := λ a b, zero_add,
@@ -33,16 +38,15 @@ instance ℕCategory : Category (λ a b : unit, ℕ) :=
 
 open Category
 
-variables { Obj₁ Obj₂ : Type }
-variables { Hom₁ : Obj₁ → Obj₁ → Type } { Hom₂ : Obj₂ → Obj₂ → Type }
+-- maybe it's weird to have Category bundled and Functor parameterized ... but that's the deal for now.
 
-structure Functor (C₁ : Category Hom₁) (C₂ : Category Hom₂) :=
-  (onObjects   : Obj₁ → Obj₂)
-  (onMorphisms : Π ⦃A B : Obj₁⦄,
-                Hom₁ A B → Hom₂ (onObjects A) (onObjects B))
-  (identities : Π (A : Obj₁),
+structure Functor (C₁ : Category) (C₂ : Category) :=
+  (onObjects   : Obj C₁ → Obj C₂)
+  (onMorphisms : Π ⦃A B : Obj C₁⦄,
+                Hom C₁ A B → Hom C₂ (onObjects A) (onObjects B))
+  (identities : Π (A : Obj C₁),
     onMorphisms (identity C₁ A) = identity C₂ (onObjects A))
-  (functoriality : Π ⦃A B C : Obj₁⦄ (f : Hom₁ A B) (g : Hom₁ B C),
+  (functoriality : Π ⦃A B C : Obj C₁⦄ (f : Hom C₁ A B) (g : Hom C₁ B C),
     onMorphisms (compose C₁ f g) = compose C₂ (onMorphisms f) (onMorphisms g))
 
 attribute [class] Functor
@@ -54,15 +58,11 @@ attribute [class] Functor
 namespace Functor
   -- Lean complains about the use of local variables in
   -- notation. There must be a way around that.
-  infix `<$>`:50 := λ {Obj₁ Obj₂ : Type} {Hom₁ : Obj₁ → Obj₁ → Type}
-                      {Hom₂ : Obj₂ → Obj₂ → Type}
-                      {C₁ : Category Hom₁} {C₂ : Category Hom₂}
-                      (F : Functor C₁ C₂) (A : Obj₁),
+  infix `<$>`:50 := λ {C₁ : Category} {C₂ : Category}
+                      (F : Functor C₁ C₂) (A : Obj C₁),
                       onObjects F A
-  infix `<$>m`:50 := λ {Obj₁ Obj₂ : Type} {Hom₁ : Obj₁ → Obj₁ → Type}
-                      {Hom₂ : Obj₂ → Obj₂ → Type}
-                      {C₁ : Category Hom₁} {C₂ : Category Hom₂}
-                      (F : Functor C₁ C₂) {A B : Obj₁} (f : Hom₁ A B),
+  infix `<$>m`:50 := λ {C₁ : Category} {C₂ : Category}
+                      (F : Functor C₁ C₂) {A B : Obj C₁} (f : Hom C₁ A B),
                       onMorphisms F f
 end Functor
 
@@ -79,16 +79,15 @@ instance DoublingAsFunctor : Functor ℕCategory ℕCategory :=
     functoriality := by blast
   }
 
-variables { Obj_C Obj_D : Type }
-variables { Hom_C : Obj_C -> Obj_C -> Type } { Hom_D : Obj_D -> Obj_D -> Type }
-
 open prod
 
 -- TODO(?) Can these proofs be simplified?
 -- Stephen's earlier versions (for Lean 2?) were perhaps better.
-instance ProductCategory (C : Category Hom_C) (D : Category Hom_D) :
-  Category (λ a b : Obj_C × Obj_D, Hom_C (fst a) (fst b) × Hom_D (snd a) (snd b)) :=
+instance ProductCategory (C : Category) (D : Category) :
+  Category :=
   {
+    Obj := Obj C × Obj D,
+    Hom := (λ a b : Obj C × Obj D, Hom C (fst a) (fst b) × Hom D (snd a) (snd b)),
     identity := λ a, (identity C (fst a), identity D (snd a)),
     compose  := λ a b c f g, (compose C (fst f) (fst g), compose D (snd f) (snd g)),
 
@@ -126,8 +125,8 @@ def ℕTensorProduct : Functor (ℕCategory ×c ℕCategory) ℕCategory :=
     functoriality := by blast
   }
 
-structure LaxMonoidalCategory { Obj : Type } (Hom : Obj → Obj → Type)
-  extends carrier : Category Hom :=
+structure LaxMonoidalCategory
+  extends carrier : Category :=
   (tensor : Functor (carrier ×c carrier) carrier)
   (tensor_unit : Obj)
 
@@ -163,45 +162,37 @@ structure LaxMonoidalCategory { Obj : Type } (Hom : Obj → Obj → Type)
 
 attribute [class] LaxMonoidalCategory
 attribute [instance] LaxMonoidalCategory.to_Category
-instance LaxMonoidalCategory_coercion { Obj : Type } { Hom : Obj -> Obj -> Type } : has_coe (LaxMonoidalCategory Hom) (Category Hom) := 
+instance LaxMonoidalCategory_coercion : has_coe LaxMonoidalCategory Category := 
   ⟨LaxMonoidalCategory.to_Category⟩
 
 namespace LaxMonoidalCategory
-  infix `⊗`:70 := λ {Obj : Type} {Hom : Obj → Obj → Type}
-                    {C : LaxMonoidalCategory Obj Hom} (A B : Obj),
+  infix `⊗`:70 := λ {C : LaxMonoidalCategory} (A B : Obj C),
                     tensor C <$> (A, B)
-  infix `⊗m`:70 := λ {Obj : Type} {Hom : Obj → Obj → Type}
-                     {C : LaxMonoidalCategory Obj Hom} {A B C D : Obj}
-                     (f : Hom A B) (g : Hom C D),
+  infix `⊗m`:70 := λ {C : LaxMonoidalCategory} {W X Y Z : Obj C} -- could we just write ⊗ here, overloading the notation?
+                     (f : Hom C W X) (g : Hom C Y Z),
                      tensor C <$>m (f, g)
 end LaxMonoidalCategory
 
 open LaxMonoidalCategory
 
---theorem LiftForgetLax {Obj : Type} {Hom : Obj → Obj → Type} (C : Category Obj Hom) :
---        Π {tensor : Functor (C ×c C) C} {unit : Obj}
---        {associator : Π (A B C : Obj), Hom ((A ⊗ B) ⊗ C) (A ⊗ (B ⊗ C))},
---        LaxAsCategory.mk
-
-
-def ℕLaxMonoidalCategory : LaxMonoidalCategory (λ A B : unit, ℕ) :=
+def ℕLaxMonoidalCategory : LaxMonoidalCategory :=
   { ℕCategory with
     tensor     := ℕTensorProduct,
     tensor_unit       := (),
     associator := λ A B C, Category.identity ℕCategory ()
   }
 
--- casting is not working: we really want to be able to write the following:
+/-
 instance DoublingAsFunctor' : Functor ℕLaxMonoidalCategory ℕLaxMonoidalCategory :=
   { onObjects   := id,
-    onMorphisms := (λ A B n, n + n),
+    onMorphisms := λ A B n, n + n, -- no idea what is going wrong here
     identities    := by blast,
     functoriality := by blast
   }
+-/
 
-
-structure OplaxMonoidalCategory {Obj : Type} (Hom : Obj → Obj → Type)
-  extends carrier : Category Hom :=
+structure OplaxMonoidalCategory
+  extends carrier : Category :=
   (tensor : Functor (carrier ×c carrier) carrier)
   (tensor_unit : Obj)
 
@@ -211,33 +202,38 @@ structure OplaxMonoidalCategory {Obj : Type} (Hom : Obj → Obj → Type)
 
 attribute [class] OplaxMonoidalCategory
 attribute [instance] OplaxMonoidalCategory.to_Category
-instance OplaxMonoidalCategory_coercion { Obj : Type } { Hom : Obj -> Obj -> Type } : has_coe (OplaxMonoidalCategory Hom) (Category Hom) := 
+instance OplaxMonoidalCategory_coercion : has_coe OplaxMonoidalCategory Category := 
   ⟨OplaxMonoidalCategory.to_Category⟩
 
-structure MonoidalCategory {Obj : Type} (Hom : Obj -> Obj -> Type)
-  extends LaxMonoidalCategory Hom, OplaxMonoidalCategory Hom :=
+structure MonoidalCategory
+  extends LaxMonoidalCategory, OplaxMonoidalCategory :=
   (associators_inverses_1: Π (A B C : Obj), compose (associator A B C) (backwards_associator A B C) = identity (tensor <$> (tensor <$> (A, B), C)))
   (associators_inverses_2: Π (A B C : Obj), compose (backwards_associator A B C) (associator A B C) = identity (tensor <$> (A, tensor <$> (B, C))))
 
 attribute [class] MonoidalCategory
 attribute [instance] MonoidalCategory.to_LaxMonoidalCategory
-instance MonoidalCategory_coercion_to_LaxMonoidalCategory { Obj : Type } { Hom : Obj -> Obj -> Type } : has_coe (MonoidalCategory Hom) (LaxMonoidalCategory Hom) := ⟨MonoidalCategory.to_LaxMonoidalCategory⟩
---instance MonoidalCategory_coercion_to_OplaxMonoidalCategory { Obj : Type } { Hom : Obj -> Obj -> Type } : has_coe (MonoidalCategory Hom) (OplaxMonoidalCategory Hom) := ⟨MonoidalCategory.to_OplaxMonoidalCategory⟩
+instance MonoidalCategory_coercion_to_LaxMonoidalCategory : has_coe MonoidalCategory LaxMonoidalCategory := ⟨MonoidalCategory.to_LaxMonoidalCategory⟩
+--instance MonoidalCategory_coercion_to_OplaxMonoidalCategory : has_coe MonoidalCategory OplaxMonoidalCategory := ⟨MonoidalCategory.to_OplaxMonoidalCategory⟩
 
-definition foo { Obj : Type } { Hom : Obj -> Obj -> Type } (C : MonoidalCategory Hom ) : Category Hom := C
+-- just testing the coercion is working now
+definition foo (C : MonoidalCategory) : Category := C
 
-definition identity_functor { Obj : Type } { Hom : Obj -> Obj -> Type } (C : MonoidalCategory Hom) : Functor C C :=
+-- and another test
+definition identity_functor (C : MonoidalCategory) : Functor C C :=
 {
-
+  onObjects := λ a, a,
+  onMorphisms := λ a b f, f,
+  identities := by blast,
+  functoriality := by blast
 }
 
 open Functor
 
--- Running into the same coercion problem. :-(
-definition tensor_on_left {Obj: Type} {Hom: Obj -> Obj -> Type} (C: MonoidalCategory Hom) (X: Obj) : @Functor Obj Obj Hom Hom C C := 
+/- okay, this seems to be a serious difficulty -/
+definition tensor_on_left (C: MonoidalCategory) (X: Category.Obj C) : Functor C C := 
   {
-    onObjects := λ a : Obj, onObjects (@tensor Obj Hom C) (X, a),
-    onMorphisms := λ a b : Obj, λ f : Hom a b, onMorphisms (@tensor Obj Hom C) (@Category.identity Obj Hom C X, f),
+    onObjects := λ a, onObjects (tensor C) (X, a),
+    onMorphisms := λ a b f, onMorphisms (tensor C) (MonoidalCategory.identity C X, f),
     identities := --begin
                   --  intros,
                   --  pose H := identities (@tensor Obj Hom C) (X, A),
@@ -252,19 +248,17 @@ definition tensor_on_left {Obj: Type} {Hom: Obj -> Obj -> Type} (C: MonoidalCate
 -- TODO define natural transformations between functors
 -- TODO define a natural isomorphism
 -- TODO define a braided monoidal category
-structure BraidedMonoidalCategory {Obj : Type} (Hom: Obj -> Obj -> Type)
-  extends MonoidalCategory Hom :=
+structure BraidedMonoidalCategory
+  extends MonoidalCategory :=
   (braiding: Π A : Obj, NaturalIsomorphism (tensor_on_left this A) (tensor_on_right this A))
 
 -- TODO define a symmetric monoidal category
 
-structure EnrichedCategory
-  { VObj : Type } 
-  { VHom : VObj -> VObj -> Type } 
-  (V: MonoidalCategory VHom) 
-  { Obj : Type }
-  (Hom : Obj -> Obj -> VObj) :=
-  (compose :  Π ⦃A B C : Obj⦄, VHom ((tensor V) <$> ((Hom A B), (Hom B C))) (Hom A C)) -- again, the coercion problem
+structure EnrichedCategory :=
+  (V: MonoidalCategory) 
+  (Obj : Type )
+  (Hom : Obj -> Obj -> MonoidalCategory.Obj V)
+  (compose :  Π ⦃A B C : Obj⦄, MonoidalCategory.Hom V ((tensor V) <$> ((Hom A B), (Hom B C))) (Hom A C))
   -- TODO and so on
 
 -- How do you define a structure which extends another, but has no new fields?

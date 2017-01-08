@@ -16,3 +16,7 @@ definition doesnt_work := f X2
 instance X : C2 := X2
 definition Y: C1 := by apply_instance
 
+structure P(c1 : C1) := (p: unit)
+definition g(c2 : C2) : P c2 := P.mk c2 unit.star
+
+check g X
