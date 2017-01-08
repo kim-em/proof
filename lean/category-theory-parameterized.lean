@@ -133,6 +133,7 @@ structure LaxMonoidalCategory (Obj : Type) (Hom : Obj → Obj → Type)
 
   (associator : Π (A B C : Obj),
      Hom (tensor <$> (tensor <$> (A, B), C)) (tensor <$> (A, tensor <$> (B, C))))
+-- TODO actually, express the associator as a natural transformation!
 /- I tried writing the pentagon, but it doesn't type check. :-(
   (pentagon : Π (A B C D : Obj),
      -- we need to compare:
@@ -148,6 +149,12 @@ structure LaxMonoidalCategory (Obj : Type) (Hom : Obj → Obj → Type)
        (associator A B (tensor <$> (C, D)))
 
   )
+-/
+/-
+-- TODO(far future)
+-- One should prove the first substantial result of this theory: that any two ways to reparenthesize are equal.
+-- It requires introducing a representation of a reparathesization, but the proof should then be an easy induction.
+-- It's a good example of something that is so easy for humans, that is better eventually be easy for the computer too!
 -/
 
 -- Notice that LaxMonoidalCategory.tensor has a horrible signature...
@@ -191,3 +198,46 @@ instance DoublingAsFunctor' : Functor ℕLaxMonoidalCategory ℕLaxMonoidalCateg
     functoriality := by blast
   }
 -/
+
+structure OplaxMonoidalCategory (Obj : Type) (Hom : Obj → Obj → Type)
+  extends carrier : Category Obj Hom :=
+  (tensor : Functor (carrier ×c carrier) carrier)
+  (unit : Obj)
+
+  -- TODO better name? unfortunately it doesn't yet make sense to say 'inverse_associator'.
+  (backwards_associator : Π (A B C : Obj),
+     Hom (tensor <$> (A, tensor <$> (B, C)))  (tensor <$> (tensor <$> (A, B), C)))
+
+structure MonoidalCategory (Obj : Type) (Hom : Obj -> Obj -> Type)
+  extends LaxMonoidalCategory Obj Hom, OplaxMonoidalCategory Obj Hom :=
+  (associators_inverses_1: Π (A B C : Obj), compose (associator A B C) (backwards_associator A B C) = identity (tensor <$> (tensor <$> (A, B), C)))
+  (associators_inverses_2: Π (A B C : Obj), compose (backwards_associator A B C) (associator A B C) = identity (tensor <$> (A, tensor <$> (B, C))))
+
+-- Running into the same coercion problem. :-(
+definition tensor_on_left {Obj: Type} {Hom: Obj -> Obj -> Type} (C: MonoidalCategory Obj Hom) (X: Obj) : Functor C C := by sorry
+
+-- TODO definition tensor_on_right
+-- TODO define natural transformations between functors
+-- TODO define a natural isomorphism
+-- TODO define a braided monoidal category
+structure BraidedMonoidalCategory (Obj : Type) (Hom: Obj -> Obj -> Type)
+  extends MonoidalCategory Obj Hom :=
+  (braiding: Π A : Obj, NaturalIsomorphism (tensor_on_left this A) (tensor_on_right this A))
+
+-- TODO define a symmetric monoidal category
+
+structure EnrichedCategory
+  { VObj : Type } 
+  { VHom : VObj -> VObj -> Type } 
+  (V: MonoidalCategory VObj VHom) 
+  (Obj : Type)
+  (Hom : Obj -> Obj -> VObj) :=
+  (compose :  Π ⦃A B C : Obj⦄, VHom ((tensor V) <$> ((Hom A B), (Hom B C))) (Hom A C)) -- again, the coercion problem
+  -- TODO and so on
+
+-- How do you define a structure which extends another, but has no new fields?
+
+-- TODO How would we define an additive category, now? We don't want to say:
+--   Hom : Obj -> Obj -> AdditiveGroup
+-- instead we want to express something like:
+--   Hom : Obj -> Obj -> [something coercible to AdditiveGroup]

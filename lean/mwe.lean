@@ -1,13 +1,15 @@
-class bar :=
-  (b: unit)
+class C1 :=
+  (a: unit)
+class C2 extends C1
 
-structure turkle (S: bar) :=
-  (t : unit)
+definition X1: C1 := { a := unit.star }
+definition X2: C2 := { a := unit.star }
 
-class baz extends bar 
+definition f (c: C1) := ()
 
-definition X: bar := { b := unit.star }
-definition Y: baz := { b := unit.star }
+definition works_fine  := f X1
+definition doesnt_work := f X2
 
-definition works_fine  := turkle.mk X unit.star
-definition doesnt_work := turkle.mk Y unit.star
+instance X : C2 := X2
+definition Y: C1 := by apply_instance
+
