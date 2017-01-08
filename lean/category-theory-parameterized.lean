@@ -3,7 +3,7 @@ import standard
 meta def blast : tactic unit :=
 using_smt $ return ()
 
-structure Category (Obj : Type) (Hom : Obj -> Obj -> Type) :=
+structure Category { Obj : Type } (Hom : Obj -> Obj -> Type) :=
   (identity : Π A : Obj, Hom A A)
   (compose  : Π ⦃A B C : Obj⦄, Hom A B → Hom B C → Hom A C)
 
@@ -18,7 +18,7 @@ attribute [class] Category
 -- a rough edge.
 -- print Category
 
-instance ℕCategory : Category unit (λ a b, ℕ) :=
+instance ℕCategory : Category (λ a b : unit, ℕ) :=
   { identity := λ a, 0,
     compose  := λ a b c, add,
 
@@ -36,7 +36,7 @@ open Category
 variables { Obj₁ Obj₂ : Type }
 variables { Hom₁ : Obj₁ → Obj₁ → Type } { Hom₂ : Obj₂ → Obj₂ → Type }
 
-structure Functor (C₁ : Category Obj₁ Hom₁) (C₂ : Category Obj₂ Hom₂) :=
+structure Functor (C₁ : Category Hom₁) (C₂ : Category Hom₂) :=
   (onObjects   : Obj₁ → Obj₂)
   (onMorphisms : Π ⦃A B : Obj₁⦄,
                 Hom₁ A B → Hom₂ (onObjects A) (onObjects B))
@@ -56,12 +56,12 @@ namespace Functor
   -- notation. There must be a way around that.
   infix `<$>`:50 := λ {Obj₁ Obj₂ : Type} {Hom₁ : Obj₁ → Obj₁ → Type}
                       {Hom₂ : Obj₂ → Obj₂ → Type}
-                      {C₁ : Category Obj₁ Hom₁} {C₂ : Category Obj₂ Hom₂}
+                      {C₁ : Category Hom₁} {C₂ : Category Hom₂}
                       (F : Functor C₁ C₂) (A : Obj₁),
                       onObjects F A
   infix `<$>m`:50 := λ {Obj₁ Obj₂ : Type} {Hom₁ : Obj₁ → Obj₁ → Type}
                       {Hom₂ : Obj₂ → Obj₂ → Type}
-                      {C₁ : Category Obj₁ Hom₁} {C₂ : Category Obj₂ Hom₂}
+                      {C₁ : Category Hom₁} {C₂ : Category Hom₂}
                       (F : Functor C₁ C₂) {A B : Obj₁} (f : Hom₁ A B),
                       onMorphisms F f
 end Functor
@@ -86,8 +86,8 @@ open prod
 
 -- TODO(?) Can these proofs be simplified?
 -- Stephen's earlier versions (for Lean 2?) were perhaps better.
-instance ProductCategory (C : Category Obj_C Hom_C) (D : Category Obj_D Hom_D) :
-  Category (Obj_C × Obj_D) (λ a b, Hom_C (fst a) (fst b) × Hom_D (snd a) (snd b)) :=
+instance ProductCategory (C : Category Hom_C) (D : Category Hom_D) :
+  Category (λ a b : Obj_C × Obj_D, Hom_C (fst a) (fst b) × Hom_D (snd a) (snd b)) :=
   {
     identity := λ a, (identity C (fst a), identity D (snd a)),
     compose  := λ a b c f g, (compose C (fst f) (fst g), compose D (snd f) (snd g)),
@@ -126,10 +126,10 @@ def ℕTensorProduct : Functor (ℕCategory ×c ℕCategory) ℕCategory :=
     functoriality := by blast
   }
 
-structure LaxMonoidalCategory (Obj : Type) (Hom : Obj → Obj → Type)
-  extends carrier : Category Obj Hom :=
+structure LaxMonoidalCategory { Obj : Type } (Hom : Obj → Obj → Type)
+  extends carrier : Category Hom :=
   (tensor : Functor (carrier ×c carrier) carrier)
-  (unit : Obj)
+  (tensor_unit : Obj)
 
   (associator : Π (A B C : Obj),
      Hom (tensor <$> (tensor <$> (A, B), C)) (tensor <$> (A, tensor <$> (B, C))))
@@ -159,7 +159,7 @@ structure LaxMonoidalCategory (Obj : Type) (Hom : Obj → Obj → Type)
 
 -- Notice that LaxMonoidalCategory.tensor has a horrible signature...
 -- It sure would be nice if it read ... Functor (carrier ×c carrier) carrier
-print LaxMonoidalCategory
+-- print LaxMonoidalCategory
 
 attribute [class] LaxMonoidalCategory
 attribute [instance] LaxMonoidalCategory.to_Category
@@ -182,10 +182,10 @@ open LaxMonoidalCategory
 --        LaxAsCategory.mk
 
 
-def ℕLaxMonoidalCategory : LaxMonoidalCategory unit (λ A B, ℕ) :=
+def ℕLaxMonoidalCategory : LaxMonoidalCategory (λ A B : unit, ℕ) :=
   { ℕCategory with
     tensor     := ℕTensorProduct,
-    unit       := (),
+    tensor_unit       := (),
     associator := λ A B C, Category.identity ℕCategory ()
   }
 
@@ -199,29 +199,29 @@ instance DoublingAsFunctor' : Functor ℕLaxMonoidalCategory ℕLaxMonoidalCateg
   }
 -/
 
-structure OplaxMonoidalCategory (Obj : Type) (Hom : Obj → Obj → Type)
-  extends carrier : Category Obj Hom :=
+structure OplaxMonoidalCategory {Obj : Type} (Hom : Obj → Obj → Type)
+  extends carrier : Category Hom :=
   (tensor : Functor (carrier ×c carrier) carrier)
-  (unit : Obj)
+  (tensor_unit : Obj)
 
   -- TODO better name? unfortunately it doesn't yet make sense to say 'inverse_associator'.
   (backwards_associator : Π (A B C : Obj),
      Hom (tensor <$> (A, tensor <$> (B, C)))  (tensor <$> (tensor <$> (A, B), C)))
 
-structure MonoidalCategory (Obj : Type) (Hom : Obj -> Obj -> Type)
-  extends LaxMonoidalCategory Obj Hom, OplaxMonoidalCategory Obj Hom :=
+structure MonoidalCategory {Obj : Type} (Hom : Obj -> Obj -> Type)
+  extends LaxMonoidalCategory Hom, OplaxMonoidalCategory Hom :=
   (associators_inverses_1: Π (A B C : Obj), compose (associator A B C) (backwards_associator A B C) = identity (tensor <$> (tensor <$> (A, B), C)))
   (associators_inverses_2: Π (A B C : Obj), compose (backwards_associator A B C) (associator A B C) = identity (tensor <$> (A, tensor <$> (B, C))))
 
 -- Running into the same coercion problem. :-(
-definition tensor_on_left {Obj: Type} {Hom: Obj -> Obj -> Type} (C: MonoidalCategory Obj Hom) (X: Obj) : Functor C C := by sorry
+definition tensor_on_left {Obj: Type} {Hom: Obj -> Obj -> Type} (C: MonoidalCategory Hom) (X: Obj) : Functor C C := by sorry
 
 -- TODO definition tensor_on_right
 -- TODO define natural transformations between functors
 -- TODO define a natural isomorphism
 -- TODO define a braided monoidal category
-structure BraidedMonoidalCategory (Obj : Type) (Hom: Obj -> Obj -> Type)
-  extends MonoidalCategory Obj Hom :=
+structure BraidedMonoidalCategory {Obj : Type} (Hom: Obj -> Obj -> Type)
+  extends MonoidalCategory Hom :=
   (braiding: Π A : Obj, NaturalIsomorphism (tensor_on_left this A) (tensor_on_right this A))
 
 -- TODO define a symmetric monoidal category
@@ -229,8 +229,8 @@ structure BraidedMonoidalCategory (Obj : Type) (Hom: Obj -> Obj -> Type)
 structure EnrichedCategory
   { VObj : Type } 
   { VHom : VObj -> VObj -> Type } 
-  (V: MonoidalCategory VObj VHom) 
-  (Obj : Type)
+  (V: MonoidalCategory VHom) 
+  { Obj : Type }
   (Hom : Obj -> Obj -> VObj) :=
   (compose :  Π ⦃A B C : Obj⦄, VHom ((tensor V) <$> ((Hom A B), (Hom B C))) (Hom A C)) -- again, the coercion problem
   -- TODO and so on
