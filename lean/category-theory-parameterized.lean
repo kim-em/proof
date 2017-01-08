@@ -3,6 +3,8 @@ import standard
 meta def blast : tactic unit :=
 using_smt $ return ()
 
+set_option pp.implicit true
+
 structure Category { Obj : Type } (Hom : Obj -> Obj -> Type) :=
   (identity : Π A : Obj, Hom A A)
   (compose  : Π ⦃A B C : Obj⦄, Hom A B → Hom B C → Hom A C)
@@ -11,6 +13,18 @@ structure Category { Obj : Type } (Hom : Obj -> Obj -> Type) :=
   (right_identity : Π ⦃A B : Obj⦄ (f : Hom A B), compose f (identity _) = f)
   (associativity  : Π ⦃A B C D : Obj⦄ (f : Hom A B) (g : Hom B C) (h : Hom C D),
     compose (compose f g) h = compose f (compose g h))
+
+class Category' { Obj : Type } (Hom : Obj -> Obj -> Type) :=
+  (identity : Π A : Obj, Hom A A)
+  (compose  : Π ⦃A B C : Obj⦄, Hom A B → Hom B C → Hom A C)
+
+  (left_identity  : Π ⦃A B : Obj⦄ (f : Hom A B), compose (identity _) f = f)
+  (right_identity : Π ⦃A B : Obj⦄ (f : Hom A B), compose f (identity _) = f)
+  (associativity  : Π ⦃A B C D : Obj⦄ (f : Hom A B) (g : Hom B C) (h : Hom C D),
+    compose (compose f g) h = compose f (compose g h))
+
+print Category
+print Category'
 
 attribute [class] Category
 -- declaring it as a class from the beginning results in an insane
