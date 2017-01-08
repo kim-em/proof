@@ -163,6 +163,8 @@ structure LaxMonoidalCategory { Obj : Type } (Hom : Obj → Obj → Type)
 
 attribute [class] LaxMonoidalCategory
 attribute [instance] LaxMonoidalCategory.to_Category
+instance LaxMonoidalCategory_coercion { Obj : Type } { Hom : Obj -> Obj -> Type } : has_coe (LaxMonoidalCategory Hom) (Category Hom) := 
+  ⟨LaxMonoidalCategory.to_Category⟩
 
 namespace LaxMonoidalCategory
   infix `⊗`:70 := λ {Obj : Type} {Hom : Obj → Obj → Type}
@@ -190,14 +192,13 @@ def ℕLaxMonoidalCategory : LaxMonoidalCategory (λ A B : unit, ℕ) :=
   }
 
 -- casting is not working: we really want to be able to write the following:
-/-
 instance DoublingAsFunctor' : Functor ℕLaxMonoidalCategory ℕLaxMonoidalCategory :=
   { onObjects   := id,
     onMorphisms := (λ A B n, n + n),
     identities    := by blast,
     functoriality := by blast
   }
--/
+
 
 structure OplaxMonoidalCategory {Obj : Type} (Hom : Obj → Obj → Type)
   extends carrier : Category Hom :=
@@ -208,10 +209,22 @@ structure OplaxMonoidalCategory {Obj : Type} (Hom : Obj → Obj → Type)
   (backwards_associator : Π (A B C : Obj),
      Hom (tensor <$> (A, tensor <$> (B, C)))  (tensor <$> (tensor <$> (A, B), C)))
 
+attribute [class] OplaxMonoidalCategory
+attribute [instance] OplaxMonoidalCategory.to_Category
+instance OplaxMonoidalCategory_coercion { Obj : Type } { Hom : Obj -> Obj -> Type } : has_coe (OplaxMonoidalCategory Hom) (Category Hom) := 
+  ⟨OplaxMonoidalCategory.to_Category⟩
+
 structure MonoidalCategory {Obj : Type} (Hom : Obj -> Obj -> Type)
   extends LaxMonoidalCategory Hom, OplaxMonoidalCategory Hom :=
   (associators_inverses_1: Π (A B C : Obj), compose (associator A B C) (backwards_associator A B C) = identity (tensor <$> (tensor <$> (A, B), C)))
   (associators_inverses_2: Π (A B C : Obj), compose (backwards_associator A B C) (associator A B C) = identity (tensor <$> (A, tensor <$> (B, C))))
+
+attribute [class] MonoidalCategory
+attribute [instance] MonoidalCategory.to_LaxMonoidalCategory
+instance MonoidalCategory_coercion_to_LaxMonoidalCategory { Obj : Type } { Hom : Obj -> Obj -> Type } : has_coe (MonoidalCategory Hom) (LaxMonoidalCategory Hom) := ⟨MonoidalCategory.to_LaxMonoidalCategory⟩
+instance MonoidalCategory_coercion_to_OplaxMonoidalCategory { Obj : Type } { Hom : Obj -> Obj -> Type } : has_coe (MonoidalCategory Hom) (OplaxMonoidalCategory Hom) := ⟨MonoidalCategory.to_OplaxMonoidalCategory⟩
+
+definition foo { Obj : Type } { Hom : Obj -> Obj -> Type } (C : MonoidalCategory Hom ) : Category Hom := C
 
 -- Running into the same coercion problem. :-(
 definition tensor_on_left {Obj: Type} {Hom: Obj -> Obj -> Type} (C: MonoidalCategory Hom) (X: Obj) : Functor C C := by sorry
