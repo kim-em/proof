@@ -59,12 +59,17 @@ namespace Functor
   -- Lean complains about the use of local variables in
   -- notation. There must be a way around that.
   infix `<$>`:50 := λ {C₁ : Category} {C₂ : Category}
-                      (F : Functor C₁ C₂) (A : C₁^.Obj),
-                      onObjects F A
-  infix `<$>m`:50 := λ {C₁ : Category} {C₂ : Category}
                       (F : Functor C₁ C₂) {A B : C₁^.Obj} (f : C₁^.Hom A B),
                       onMorphisms F f
 end Functor
+
+instance Functor_to_onObjects { C₁ C₂ : Category }: has_coe_to_fun (Functor C₁ C₂) := 
+{ F   := λ f, C₁^.Obj -> C₂^.Obj, 
+  coe := Functor.onObjects } 
+
+instance Functor_to_onMorphisms { C₁ C₂ : Category } { A B : C₁^.Obj }: has_coe_to_fun (Functor C₁ C₂) := 
+{ F   := λ f, C₁^.Hom A B -> C₂^.Hom (f A) (f B), 
+  coe := λ f, @Functor.onMorphisms C₁ C₂ f A B } 
 
 --print Functor
 
@@ -115,23 +120,44 @@ instance ProductCategory (C : Category) (D : Category) :
   }
 
 namespace ProductCategory
-  notation C `×c` D := ProductCategory C D
+  notation C `×` D := ProductCategory C D
 end ProductCategory
 
-def ℕTensorProduct : Functor (ℕCategory ×c ℕCategory) ℕCategory :=
+def ℕTensorProduct : Functor (ℕCategory × ℕCategory) ℕCategory :=
   { onObjects     := fst,
     onMorphisms   := λ A B n, fst n + snd n,
     identities    := by blast,
     functoriality := by blast
   }
 
-structure LaxMonoidalCategory
+structure PreMonoidalCategory
+  -- this is only for internal use: it has a tensor product, but no associator at all
+  -- it's not interesting mathematically, but allows us to introduce usable notation for the tensor product
   extends carrier : Category :=
-  (tensor : Functor (carrier ×c carrier) carrier)
+  (tensor : Functor (carrier × carrier) carrier)
   (tensor_unit : Obj)
 
+attribute [class] PreMonoidalCategory
+attribute [instance] PreMonoidalCategory.to_Category
+instance PreMonoidalCategory_coercion : has_coe PreMonoidalCategory Category := 
+  ⟨PreMonoidalCategory.to_Category⟩
+
+namespace PreMonoidalCategory
+  infix `⊗`:70 := λ {C : PreMonoidalCategory} (A B : Obj C),
+                    tensor C (A, B)
+  infix `⊗`:70 := λ {C : PreMonoidalCategory} {W X Y Z : Obj C}
+                     (f : Hom C W X) (g : Hom C Y Z),
+                     C^.tensor <$> (f, g)
+end PreMonoidalCategory
+
+structure LaxMonoidalCategory
+  extends carrier : PreMonoidalCategory :=
+
   (associator : Π (A B C : Obj),
-     Hom (tensor <$> (tensor <$> (A, B), C)) (tensor <$> (A, tensor <$> (B, C))))
+     Hom (tensor (tensor (A, B), C)) (tensor (A, tensor (B, C))))      
+-- Why can't we use notation here? It seems with slightly cleverer type checking it should work.
+-- If we really can't make this work, remove PreMonoidalCategory, as it's useless.
+
 -- TODO actually, express the associator as a natural transformation!
 /- I tried writing the pentagon, but it doesn't type check. :-(
   (pentagon : Π (A B C D : Obj),
@@ -140,12 +166,12 @@ structure LaxMonoidalCategory
      -- ((AB)C)D ---> (AB)(CD) ---> A(B(CD))
      compose
        (compose 
-         (tensor <$>m (associator A B C, identity D))
-         (associator A (tensor <$> (B, C)) D)
-       ) (tensor <$>m (identity A, associator B C D)) =
+         (tensor <$> (associator A B C, identity D))
+         (associator A (tensor (B, C)) D)
+       ) (tensor <$> (identity A, associator B C D)) =
      compose
-       (associator (tensor <$> (A, B)) C D)
-       (associator A B (tensor <$> (C, D)))
+       (associator (tensor (A, B)) C D)
+       (associator A B (tensor (C, D)))
 
   )
 -/
@@ -157,21 +183,13 @@ structure LaxMonoidalCategory
 -/
 
 -- Notice that LaxMonoidalCategory.tensor has a horrible signature...
--- It sure would be nice if it read ... Functor (carrier ×c carrier) carrier
+-- It sure would be nice if it read ... Functor (carrier × carrier) carrier
 -- print LaxMonoidalCategory
 
 attribute [class] LaxMonoidalCategory
-attribute [instance] LaxMonoidalCategory.to_Category
-instance LaxMonoidalCategory_coercion : has_coe LaxMonoidalCategory Category := 
-  ⟨LaxMonoidalCategory.to_Category⟩
-
-namespace LaxMonoidalCategory
-  infix `⊗`:70 := λ {C : LaxMonoidalCategory} (A B : Obj C),
-                    tensor C <$> (A, B)
-  infix `⊗m`:70 := λ {C : LaxMonoidalCategory} {W X Y Z : Obj C} -- could we just write ⊗ here, overloading the notation?
-                     (f : Hom C W X) (g : Hom C Y Z),
-                     tensor C <$>m (f, g)
-end LaxMonoidalCategory
+attribute [instance] LaxMonoidalCategory.to_PreMonoidalCategory
+instance LaxMonoidalCategory_coercion : has_coe LaxMonoidalCategory PreMonoidalCategory := 
+  ⟨LaxMonoidalCategory.to_PreMonoidalCategory⟩
 
 --open LaxMonoidalCategory
 
@@ -192,31 +210,33 @@ instance DoublingAsFunctor' : Functor ℕLaxMonoidalCategory ℕLaxMonoidalCateg
 -/
 
 structure OplaxMonoidalCategory
-  extends carrier : Category :=
-  (tensor : Functor (carrier ×c carrier) carrier)
-  (tensor_unit : Obj)
-
+  extends carrier : PreMonoidalCategory :=
   -- TODO better name? unfortunately it doesn't yet make sense to say 'inverse_associator'.
   (backwards_associator : Π (A B C : Obj),
-     Hom (tensor <$> (A, tensor <$> (B, C)))  (tensor <$> (tensor <$> (A, B), C)))
+     Hom (tensor (A, tensor (B, C)))  (tensor (tensor (A, B), C)))
 
 attribute [class] OplaxMonoidalCategory
-attribute [instance] OplaxMonoidalCategory.to_Category
-instance OplaxMonoidalCategory_coercion : has_coe OplaxMonoidalCategory Category := 
-  ⟨OplaxMonoidalCategory.to_Category⟩
+attribute [instance] OplaxMonoidalCategory.to_PreMonoidalCategory
+instance OplaxMonoidalCategory_coercion : has_coe OplaxMonoidalCategory PreMonoidalCategory := 
+  ⟨OplaxMonoidalCategory.to_PreMonoidalCategory⟩
 
 structure MonoidalCategory
   extends LaxMonoidalCategory, OplaxMonoidalCategory :=
-  (associators_inverses_1: Π (A B C : Obj), compose (associator A B C) (backwards_associator A B C) = identity (tensor <$> (tensor <$> (A, B), C)))
-  (associators_inverses_2: Π (A B C : Obj), compose (backwards_associator A B C) (associator A B C) = identity (tensor <$> (A, tensor <$> (B, C))))
+  (associators_inverses_1: Π (A B C : Obj), compose (associator A B C) (backwards_associator A B C) = identity (tensor (tensor (A, B), C)))
+  (associators_inverses_2: Π (A B C : Obj), compose (backwards_associator A B C) (associator A B C) = identity (tensor (A, tensor (B, C))))
 
 attribute [class] MonoidalCategory
 attribute [instance] MonoidalCategory.to_LaxMonoidalCategory
 instance MonoidalCategory_coercion_to_LaxMonoidalCategory : has_coe MonoidalCategory LaxMonoidalCategory := ⟨MonoidalCategory.to_LaxMonoidalCategory⟩
 --instance MonoidalCategory_coercion_to_OplaxMonoidalCategory : has_coe MonoidalCategory OplaxMonoidalCategory := ⟨MonoidalCategory.to_OplaxMonoidalCategory⟩
 
--- just testing the coercion is working now
-definition foo (C : MonoidalCategory) : Category := C
+namespace MonoidalCategory
+  infix `⊗`:70 := λ {C : MonoidalCategory} (A B : Obj C),
+                    tensor C (A, B)
+  infix `⊗`:70 := λ {C : MonoidalCategory} {W X Y Z : Obj C}
+                     (f : Hom C W X) (g : Hom C Y Z),
+                     C^.tensor <$> (f, g)
+end MonoidalCategory
 
 -- and another test
 definition identity_functor (C : MonoidalCategory) : Functor C C :=
@@ -232,8 +252,8 @@ open Functor
 /- okay, this seems to be a serious difficulty -/
 definition tensor_on_left (C: MonoidalCategory) (X: C^.Obj) : Functor C C := 
   {
-    onObjects := λ a, C^.tensor^.onObjects (X, a),
-    onMorphisms := λ a b f, C^.tensor^.onMorphisms (C^.identity X, f),
+    onObjects := λ A, X ⊗ A,
+    onMorphisms := λ A B f, (C^.identity X) ⊗ f, -- C^.tensor <$> (C^.identity X, f),
     identities := --begin
                   --  intros,
                   --  pose H := identities (@tensor Obj Hom C) (X, A),
@@ -258,7 +278,7 @@ structure EnrichedCategory :=
   (V: MonoidalCategory) 
   (Obj : Type )
   (Hom : Obj -> Obj -> V^.Obj)
-  (compose :  Π ⦃A B C : Obj⦄, V^.Hom (V^.tensor <$> ((Hom A B), (Hom B C))) (Hom A C))
+  (compose :  Π ⦃A B C : Obj⦄, V^.Hom ((Hom A B) ⊗ (Hom B C)) (Hom A C))
   -- TODO and so on
 
 -- How do you define a structure which extends another, but has no new fields?
