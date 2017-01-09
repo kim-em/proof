@@ -67,9 +67,9 @@ instance Functor_to_onObjects { C₁ C₂ : Category }: has_coe_to_fun (Functor 
 { F   := λ f, C₁^.Obj -> C₂^.Obj, 
   coe := Functor.onObjects } 
 
-instance Functor_to_onMorphisms { C₁ C₂ : Category } { A B : C₁^.Obj }: has_coe_to_fun (Functor C₁ C₂) := 
-{ F   := λ f, C₁^.Hom A B -> C₂^.Hom (f A) (f B), 
-  coe := λ f, @Functor.onMorphisms C₁ C₂ f A B } 
+--instance Functor_to_onMorphisms { C₁ C₂ : Category } { A B : C₁^.Obj }: has_coe_to_fun (Functor C₁ C₂) := 
+--{ F   := λ f, C₁^.Hom A B -> C₂^.Hom (f A) (f B), 
+--  coe := λ f, @Functor.onMorphisms C₁ C₂ f A B } 
 
 --print Functor
 
