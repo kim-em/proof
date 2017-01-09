@@ -51,10 +51,6 @@ structure Functor (C₁ : Category) (C₂ : Category) :=
 
 attribute [class] Functor
 
--- (Scott:) I wish it were possible to define coercions of Functor to either
--- onObjects or onMorphisms, so we could just write F A and F f.
--- (Scott:) I'm not sure what purpose these notations serve: is 'F <$> A' that 
--- much better than 'onObjects F A' that it warrants introducing notation?
 namespace Functor
   -- Lean complains about the use of local variables in
   -- notation. There must be a way around that.
@@ -67,11 +63,10 @@ instance Functor_to_onObjects { C₁ C₂ : Category }: has_coe_to_fun (Functor 
 { F   := λ f, C₁^.Obj -> C₂^.Obj, 
   coe := Functor.onObjects } 
 
+--This doesn't work, because there's no way to provide the A and B.
 --instance Functor_to_onMorphisms { C₁ C₂ : Category } { A B : C₁^.Obj }: has_coe_to_fun (Functor C₁ C₂) := 
 --{ F   := λ f, C₁^.Hom A B -> C₂^.Hom (f A) (f B), 
 --  coe := λ f, @Functor.onMorphisms C₁ C₂ f A B } 
-
---print Functor
 
 instance DoublingAsFunctor : Functor ℕCategory ℕCategory :=
   { onObjects   := id,
@@ -86,8 +81,6 @@ instance DoublingAsFunctor : Functor ℕCategory ℕCategory :=
 
 open prod
 
--- TODO(?) Can these proofs be simplified?
--- Stephen's earlier versions (for Lean 2?) were perhaps better.
 instance ProductCategory (C : Category) (D : Category) :
   Category :=
   {
@@ -145,7 +138,7 @@ instance PreMonoidalCategory_coercion : has_coe PreMonoidalCategory Category :=
 namespace PreMonoidalCategory
   infix `⊗`:70 := λ {C : PreMonoidalCategory} (A B : Obj C),
                     tensor C (A, B)
-  infix `⊗`:70 := λ {C : PreMonoidalCategory} {W X Y Z : Obj C}
+  infix `⊗m`:70 := λ {C : PreMonoidalCategory} {W X Y Z : Obj C}
                      (f : Hom C W X) (g : Hom C Y Z),
                      C^.tensor <$> (f, g)
 end PreMonoidalCategory
@@ -191,7 +184,6 @@ attribute [instance] LaxMonoidalCategory.to_PreMonoidalCategory
 instance LaxMonoidalCategory_coercion : has_coe LaxMonoidalCategory PreMonoidalCategory := 
   ⟨LaxMonoidalCategory.to_PreMonoidalCategory⟩
 
---open LaxMonoidalCategory
 
 def ℕLaxMonoidalCategory : LaxMonoidalCategory :=
   { ℕCategory with
@@ -199,6 +191,7 @@ def ℕLaxMonoidalCategory : LaxMonoidalCategory :=
     tensor_unit       := (),
     associator := λ A B C, Category.identity ℕCategory ()
   }
+
 
 /-
 instance DoublingAsFunctor' : Functor ℕLaxMonoidalCategory ℕLaxMonoidalCategory :=
@@ -271,6 +264,54 @@ structure NaturalTransformation { C D : Category } ( F G : Functor C D ) :=
 instance NaturalTransformation_to_components { C D : Category } { F G : Functor C D } : has_coe_to_fun (NaturalTransformation F G) := 
 { F   := λ f, Π A : C^.Obj, D^.Hom (F A) (G A), 
   coe := NaturalTransformation.components } 
+
+definition IdentityNaturalTransformation { C D : Category } (F : Functor C D) : NaturalTransformation F F :=
+  {
+    components := λ A, D^.identity (F A),
+    naturality := begin
+                    intros,
+                    pose x := F^.identities A,
+                    pose y := F^.identities B,
+                    by sorry -- TODO Stephen, can you show me how to complete this proof? is it a matter of reversing the equations, then blasting?
+                  end
+  }
+
+definition vertical_composition_of_NaturalTransformations { C D : Category } { F G H : Functor C D } ( α : NaturalTransformation F G ) ( β : NaturalTransformation G H ) : NaturalTransformation F H :=
+  {
+    components := λ A, D^.compose (α A) (β A),
+    naturality := begin
+                   intros,
+                   sorry
+                  end
+  }
+
+structure Isomorphism ( C: Category ) ( A B : C^.Obj ) :=
+  (morphism : C^.Hom A B)
+  (inverse : C^.Hom B A)
+  (witness_1 : C^.compose morphism inverse = C^.identity A)
+  (witness_2 : C^.compose inverse morphism = C^.identity B)
+
+-- For now, this kills Lean, cf https://github.com/leanprover/lean/issues/1290
+--instance Isomorphism_coercion_to_morphism { C : Category } { A B C^.Obj } : has_coe (Isomorphism C A B) (C^.Hom A B) :=
+--  (coe: Isomorphism.morphism)
+
+-- To define a natural isomorphism, we'll define the functor category, and ask for an isomorphism there.
+-- It's then a lemma that each component is an isomorphism, and vice versa.
+
+instance FunctorCategory ( C D : Category ) : Category :=
+{
+  Obj := Functor C D,
+  Hom := λ F G, NaturalTransformation F G,
+
+  identity := λ F, IdentityNaturalTransformation F,
+  compose := by sorry,
+
+  left_identity := by sorry,
+  right_identity := by sorry,
+  associativity := by sorry
+}
+
+definition NaturalIsomorphism { C D : Category } ( F G : Functor C D ) := Isomorphism (FunctorCategory C D) F G
 
 -- TODO definition tensor_on_right
 -- TODO define natural transformations between functors
