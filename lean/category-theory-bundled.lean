@@ -264,6 +264,14 @@ definition tensor_on_left (C: MonoidalCategory) (X: C^.Obj) : Functor C C :=
     functoriality := by sorry
   }
 
+structure NaturalTransformation { C D : Category } ( F G : Functor C D ) :=
+  (components: Π A : C^.Obj, D^.Hom (F A) (G A))
+  (naturality: Π { A B : C^.Obj }, Π f : C^.Hom A B, D^.compose (F <$> f) (components B) = D^.compose (components A) (G <$> f))
+
+instance NaturalTransformation_to_components { C D : Category } { F G : Functor C D } : has_coe_to_fun (NaturalTransformation F G) := 
+{ F   := λ f, Π A : C^.Obj, D^.Hom (F A) (G A), 
+  coe := NaturalTransformation.components } 
+
 -- TODO definition tensor_on_right
 -- TODO define natural transformations between functors
 -- TODO define a natural isomorphism
