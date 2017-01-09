@@ -36,18 +36,18 @@ instance ℕCategory : Category :=
     associativity  := by blast  --λ a b c d, add_assoc
   }
 
-open Category
+--open Category
 
 -- maybe it's weird to have Category bundled and Functor parameterized ... but that's the deal for now.
 
 structure Functor (C₁ : Category) (C₂ : Category) :=
-  (onObjects   : Obj C₁ → Obj C₂)
-  (onMorphisms : Π ⦃A B : Obj C₁⦄,
-                Hom C₁ A B → Hom C₂ (onObjects A) (onObjects B))
-  (identities : Π (A : Obj C₁),
-    onMorphisms (identity C₁ A) = identity C₂ (onObjects A))
-  (functoriality : Π ⦃A B C : Obj C₁⦄ (f : Hom C₁ A B) (g : Hom C₁ B C),
-    onMorphisms (compose C₁ f g) = compose C₂ (onMorphisms f) (onMorphisms g))
+  (onObjects   : C₁^.Obj → C₂^.Obj)
+  (onMorphisms : Π ⦃A B : C₁^.Obj⦄,
+                C₁^.Hom A B → C₂^.Hom (onObjects A) (onObjects B))
+  (identities : Π (A : C₁^.Obj),
+    onMorphisms (C₁^.identity A) = C₂^.identity (onObjects A))
+  (functoriality : Π ⦃A B C : C₁^.Obj⦄ (f : C₁^.Hom A B) (g : C₁^.Hom B C),
+    onMorphisms (C₁^.compose f g) = C₂^.compose (onMorphisms f) (onMorphisms g))
 
 attribute [class] Functor
 
@@ -59,10 +59,10 @@ namespace Functor
   -- Lean complains about the use of local variables in
   -- notation. There must be a way around that.
   infix `<$>`:50 := λ {C₁ : Category} {C₂ : Category}
-                      (F : Functor C₁ C₂) (A : Obj C₁),
+                      (F : Functor C₁ C₂) (A : C₁^.Obj),
                       onObjects F A
   infix `<$>m`:50 := λ {C₁ : Category} {C₂ : Category}
-                      (F : Functor C₁ C₂) {A B : Obj C₁} (f : Hom C₁ A B),
+                      (F : Functor C₁ C₂) {A B : C₁^.Obj} (f : C₁^.Hom A B),
                       onMorphisms F f
 end Functor
 
@@ -86,29 +86,29 @@ open prod
 instance ProductCategory (C : Category) (D : Category) :
   Category :=
   {
-    Obj := Obj C × Obj D,
-    Hom := (λ a b : Obj C × Obj D, Hom C (fst a) (fst b) × Hom D (snd a) (snd b)),
-    identity := λ a, (identity C (fst a), identity D (snd a)),
-    compose  := λ a b c f g, (compose C (fst f) (fst g), compose D (snd f) (snd g)),
+    Obj := C^.Obj × D^.Obj,
+    Hom := (λ a b : C^.Obj × D^.Obj, C^.Hom (fst a) (fst b) × D^.Hom (snd a) (snd b)),
+    identity := λ a, (C^.identity (fst a), D^.identity (snd a)),
+    compose  := λ a b c f g, (C^.compose (fst f) (fst g), D^.compose (snd f) (snd g)),
 
     left_identity  := begin
                         intros,
-                        pose x := left_identity C (fst f),
-                        pose y := left_identity D (snd f),
+                        pose x := C^.left_identity (fst f),
+                        pose y := D^.left_identity (snd f),
                         induction f,
                         blast
                       end,
     right_identity := begin
                         intros,
-                        pose x := right_identity C (fst f),
-                        pose y := right_identity D (snd f),
+                        pose x := C^.right_identity (fst f),
+                        pose y := D^.right_identity (snd f),
                         induction f,
                         blast
                       end,
     associativity  := begin
                         intros,
-                        pose x := associativity C (fst f) (fst g) (fst h),
-                        pose y := associativity D (snd f) (snd g) (snd h),
+                        pose x := C^.associativity (fst f) (fst g) (fst h),
+                        pose y := D^.associativity (snd f) (snd g) (snd h),
                         induction f,
                         blast
                       end
@@ -173,7 +173,7 @@ namespace LaxMonoidalCategory
                      tensor C <$>m (f, g)
 end LaxMonoidalCategory
 
-open LaxMonoidalCategory
+--open LaxMonoidalCategory
 
 def ℕLaxMonoidalCategory : LaxMonoidalCategory :=
   { ℕCategory with
@@ -230,10 +230,10 @@ definition identity_functor (C : MonoidalCategory) : Functor C C :=
 open Functor
 
 /- okay, this seems to be a serious difficulty -/
-definition tensor_on_left (C: MonoidalCategory) (X: Category.Obj C) : Functor C C := 
+definition tensor_on_left (C: MonoidalCategory) (X: C^.Obj) : Functor C C := 
   {
-    onObjects := λ a, onObjects (tensor C) (X, a),
-    onMorphisms := λ a b f, onMorphisms (tensor C) (MonoidalCategory.identity C X, f),
+    onObjects := λ a, C^.tensor^.onObjects (X, a),
+    onMorphisms := λ a b f, C^.tensor^.onMorphisms (C^.identity X, f),
     identities := --begin
                   --  intros,
                   --  pose H := identities (@tensor Obj Hom C) (X, A),
@@ -257,8 +257,8 @@ structure BraidedMonoidalCategory
 structure EnrichedCategory :=
   (V: MonoidalCategory) 
   (Obj : Type )
-  (Hom : Obj -> Obj -> MonoidalCategory.Obj V)
-  (compose :  Π ⦃A B C : Obj⦄, MonoidalCategory.Hom V ((tensor V) <$> ((Hom A B), (Hom B C))) (Hom A C))
+  (Hom : Obj -> Obj -> V^.Obj)
+  (compose :  Π ⦃A B C : Obj⦄, V^.Hom (V^.tensor <$> ((Hom A B), (Hom B C))) (Hom A C))
   -- TODO and so on
 
 -- How do you define a structure which extends another, but has no new fields?

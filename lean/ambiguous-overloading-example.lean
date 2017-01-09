@@ -1,21 +1,19 @@
-import standard
-
-structure Category :=
+structure C :=
   (Obj : Type)
 
-open Category
+structure D
+  extends C
 
-structure LaxMonoidalCategory
-  extends carrier : Category
+instance D_coercion_to_C: has_coe D C := 
+  ⟨D.to_C⟩
 
-instance LaxMonoidalCategory_coercion_to_Category : has_coe LaxMonoidalCategory Category := 
-  ⟨LaxMonoidalCategory.to_Category⟩
+structure E
+  extends D
 
-open LaxMonoidalCategory
+instance E_coercion_to_D : has_coe E D := ⟨E.to_D⟩
 
-structure MonoidalCategory
-  extends LaxMonoidalCategory
+--open C
+--open D
+--open E
 
-instance MonoidalCategory_coercion_to_LaxMonoidalCategory : has_coe MonoidalCategory LaxMonoidalCategory := ⟨MonoidalCategory.to_LaxMonoidalCategory⟩
-
-definition tensor_on_left (C: MonoidalCategory) (X: Obj C) : unit := unit.star
+definition F (x: E) (X: x^.Obj) : unit := unit.star
