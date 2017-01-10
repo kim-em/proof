@@ -293,6 +293,19 @@ instance NaturalTransformation_to_components { C D : Category } { F G : Functor 
 { F   := λ f, Π A : C^.Obj, D^.Hom (F A) (G A),
   coe := NaturalTransformation.components }
 
+-- We'll want to be able to prove that two natural transformations are equal if they are componentwise equal.
+lemma NaturalTransformations_componentwise_equal
+  { C D : Category } 
+  { F G : Functor C D } 
+  ( α β : NaturalTransformation F G )
+  ( w: Π X : C^.Obj, α X = β X ) : α = β :=
+  begin
+    induction α,
+    induction β,
+    -- Argh, how to complete this proof?
+    blast
+  end
+
 definition IdentityNaturalTransformation { C D : Category } (F : Functor C D) : NaturalTransformation F F :=
   {
     components := λ A, D^.identity (F A),
@@ -320,8 +333,8 @@ structure Isomorphism ( C: Category ) ( A B : C^.Obj ) :=
   (witness_2 : C^.compose inverse morphism = C^.identity B)
 
 -- For now, this kills Lean, cf https://github.com/leanprover/lean/issues/1290
---instance Isomorphism_coercion_to_morphism { C : Category } { A B C^.Obj } : has_coe (Isomorphism C A B) (C^.Hom A B) :=
---  (coe: Isomorphism.morphism)
+instance Isomorphism_coercion_to_morphism { C : Category } { A B : C^.Obj } : has_coe (Isomorphism C A B) (C^.Hom A B) :=
+  { coe := Isomorphism.morphism }
 
 -- To define a natural isomorphism, we'll define the functor category, and ask for an isomorphism there.
 -- It's then a lemma that each component is an isomorphism, and vice versa.
@@ -334,7 +347,7 @@ instance FunctorCategory ( C D : Category ) : Category :=
   identity := λ F, IdentityNaturalTransformation F,
   compose := @vertical_composition_of_NaturalTransformations C D,
 
-  left_identity := sorry,
+  left_identity := sorry -- these facts all rely on NaturalTransformations_componentwise_equal above.
   right_identity := sorry,
   associativity := sorry
 }
@@ -348,6 +361,10 @@ definition NaturalIsomorphism { C D : Category } ( F G : Functor C D ) := Isomor
 structure BraidedMonoidalCategory
   extends MonoidalCategory :=
   (braiding: Π A : Obj, NaturalIsomorphism (tensor_on_left A) (tensor_on_right A))
+-- on second thoughts, defining the braiding as a natural isomorphism perhaps makes little sennse;
+-- easier to just say what it is componentwise, and leave it as a lemma that these components form natural transformations?
+-- hmm...!?
+
 
 -- TODO define a symmetric monoidal category
 
