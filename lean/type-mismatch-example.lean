@@ -1,3 +1,6 @@
+-- Robert Lewis solved the problem I was having here:
+-- https://groups.google.com/d/msg/lean-user/iD4k4oB3794/snn158YKDwAJ
+-- Just use 'sorry', not 'by sorry'!
 structure S :=
   (α : Type)
   (β : unit)
