@@ -123,17 +123,17 @@ def ℕTensorProduct : Functor (ℕCategory × ℕCategory) ℕCategory :=
     functoriality := by blast
   }
 
+
+
 structure PreMonoidalCategory
   -- this is only for internal use: it has a tensor product, but no associator at all
   -- it's not interesting mathematically, but may allow us to introduce usable notation for the tensor product
   extends carrier : Category :=
   (tensor : Functor (carrier × carrier) carrier)
   (tensor_unit : Obj)
+  (interchange: Π { A B C D E F: Obj }, Π f : Hom A B, Π g : Hom B C, Π h : Hom D E, Π k : Hom E F, 
+    @Functor.onMorphisms _ _ tensor (A, D) (C, F) ((compose f g), (compose h k)) = compose (@Functor.onMorphisms _ _ tensor (A, D) (B, E) (f, h)) (@Functor.onMorphisms _ _ tensor (B, E) (C, F) (g, k)))
 
-attribute [class] PreMonoidalCategory
-attribute [instance] PreMonoidalCategory.to_Category
-instance PreMonoidalCategory_coercion : has_coe PreMonoidalCategory Category := 
-  ⟨PreMonoidalCategory.to_Category⟩
 
 namespace PreMonoidalCategory
   infix `⊗`:70 := λ {C : PreMonoidalCategory} (A B : Obj C),
@@ -143,11 +143,20 @@ namespace PreMonoidalCategory
                      C^.tensor <$> (f, g)
 end PreMonoidalCategory
 
+
+attribute [class] PreMonoidalCategory
+attribute [instance] PreMonoidalCategory.to_Category
+instance PreMonoidalCategory_coercion : has_coe PreMonoidalCategory Category := 
+  ⟨PreMonoidalCategory.to_Category⟩
+
+open PreMonoidalCategory
+
 structure LaxMonoidalCategory
   extends carrier : PreMonoidalCategory :=
 
   (associator : Π (A B C : Obj),
-     Hom (tensor (tensor (A, B), C)) (tensor (A, tensor (B, C))))      
+     Hom (tensor (tensor (A, B), C)) (tensor (A, tensor (B, C)))) 
+     
 -- Why can't we use notation here? It seems with slightly cleverer type checking it should work.
 -- If we really can't make this work, remove PreMonoidalCategory, as it's useless.
 
@@ -189,7 +198,8 @@ def ℕLaxMonoidalCategory : LaxMonoidalCategory :=
   { ℕCategory with
     tensor     := ℕTensorProduct,
     tensor_unit       := (),
-    associator := λ A B C, Category.identity ℕCategory ()
+    associator := λ A B C, Category.identity ℕCategory (),
+    interchange := sorry
   }
 
 
@@ -262,8 +272,17 @@ definition tensor_on_left (C: MonoidalCategory) (X: C^.Obj) : Functor C C :=
                     exact H -- blast doesn't work here?!
                   end,
     functoriality := begin
-                       intros,
+                       intros, -- this will require the interchange axiom for MonoidalCategory, but I don't know how to do it.
+                       blast
                      end
+  }
+
+definition tensor_on_right (C: MonoidalCategory) (X: C^.Obj) : Functor C C :=
+  {
+    onObjects := λ A, A ⊗ X,
+    onMorphisms := sorry,
+    identities := sorry,
+    functoriality := sorry
   }
 
 structure NaturalTransformation { C D : Category } ( F G : Functor C D ) :=
@@ -328,7 +347,7 @@ definition NaturalIsomorphism { C D : Category } ( F G : Functor C D ) := Isomor
 -- TODO define a braided monoidal category
 structure BraidedMonoidalCategory
   extends MonoidalCategory :=
-  (braiding: Π A : Obj, NaturalIsomorphism (tensor_on_left this A) (tensor_on_right this A))
+  (braiding: Π A : Obj, NaturalIsomorphism (tensor_on_left A) (tensor_on_right A))
 
 -- TODO define a symmetric monoidal category
 
