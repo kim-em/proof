@@ -21,8 +21,8 @@ attribute [class] Category
 -- print Category
 
 instance ℕCategory : Category :=
-  { 
-    Obj := unit,    
+  {
+    Obj := unit,
     Hom := λ a b, ℕ,
     identity := λ a, 0,
     compose  := λ a b c, add,
@@ -59,14 +59,14 @@ namespace Functor
                       onMorphisms F f
 end Functor
 
-instance Functor_to_onObjects { C₁ C₂ : Category }: has_coe_to_fun (Functor C₁ C₂) := 
-{ F   := λ f, C₁^.Obj -> C₂^.Obj, 
-  coe := Functor.onObjects } 
+instance Functor_to_onObjects { C₁ C₂ : Category }: has_coe_to_fun (Functor C₁ C₂) :=
+{ F   := λ f, C₁^.Obj -> C₂^.Obj,
+  coe := Functor.onObjects }
 
---This doesn't work, because there's no way to provide the A and B.
---instance Functor_to_onMorphisms { C₁ C₂ : Category } { A B : C₁^.Obj }: has_coe_to_fun (Functor C₁ C₂) := 
---{ F   := λ f, C₁^.Hom A B -> C₂^.Hom (f A) (f B), 
---  coe := λ f, @Functor.onMorphisms C₁ C₂ f A B } 
+-- This now seems to work on its own, but there's some confusion when both this an to_onObjects are in scope. How to we resolve the ambiguity?
+--instance Functor_to_onMorphisms { C₁ C₂ : Category } : has_coe_to_fun (Functor C₁ C₂) :=
+--{ F   := λ f, Π ⦃A B : C₁^.Obj⦄, C₁^.Hom A B → C₂^.Hom (f A) (f B),
+--  coe := Functor.onMorphisms }
 
 instance DoublingAsFunctor : Functor ℕCategory ℕCategory :=
   { onObjects   := id,
@@ -132,22 +132,23 @@ structure PreMonoidalCategory
 
 attribute [class] PreMonoidalCategory
 attribute [instance] PreMonoidalCategory.to_Category
-instance PreMonoidalCategory_coercion : has_coe PreMonoidalCategory Category := 
+instance PreMonoidalCategory_coercion : has_coe PreMonoidalCategory Category :=
   ⟨PreMonoidalCategory.to_Category⟩
 
 namespace PreMonoidalCategory
-  infix `⊗`:70 := λ {C : PreMonoidalCategory} (A B : Obj C),
-                    tensor C (A, B)
-  infix `⊗m`:70 := λ {C : PreMonoidalCategory} {W X Y Z : Obj C}
-                     (f : Hom C W X) (g : Hom C Y Z),
-                     C^.tensor <$> (f, g)
+  infix `⊗`:70 := λ {C : PreMonoidalCategory} (A B : C^.Obj),
+                    Functor.onObjects C^.tensor (A, B)
+  infix `⊗m`:70 := λ {C : PreMonoidalCategory} {W X Y Z : C^.Obj}
+                     (f : C^.Hom W X) (g : C^.Hom Y Z),
+                     Functor.onMorphisms C^.tensor (f, g)
 end PreMonoidalCategory
 
 structure LaxMonoidalCategory
   extends carrier : PreMonoidalCategory :=
 
-  (associator : Π (A B C : Obj),
-     Hom (tensor (tensor (A, B), C)) (tensor (A, tensor (B, C))))      
+-- Need to switch this to use notation
+  (associator : Π (A B C : Obj), Hom (tensor^.onObjects (tensor^.onObjects (A, B), C)) (tensor^.onObjects (A, tensor^.onObjects (B, C))))
+  --(associator : Π (A B C : Obj), Hom ((A ⊗ B) ⊗ C) (A ⊗ (B ⊗ C)))
 -- Why can't we use notation here? It seems with slightly cleverer type checking it should work.
 -- If we really can't make this work, remove PreMonoidalCategory, as it's useless.
 
@@ -158,7 +159,7 @@ structure LaxMonoidalCategory
      -- ((AB)C)D ---> (A(BC))D ---> A((BC)D) ---> A(B(CD))
      -- ((AB)C)D ---> (AB)(CD) ---> A(B(CD))
      compose
-       (compose 
+       (compose
          (tensor <$> (associator A B C, identity D))
          (associator A (tensor (B, C)) D)
        ) (tensor <$> (identity A, associator B C D)) =
@@ -181,7 +182,7 @@ structure LaxMonoidalCategory
 
 attribute [class] LaxMonoidalCategory
 attribute [instance] LaxMonoidalCategory.to_PreMonoidalCategory
-instance LaxMonoidalCategory_coercion : has_coe LaxMonoidalCategory PreMonoidalCategory := 
+instance LaxMonoidalCategory_coercion : has_coe LaxMonoidalCategory PreMonoidalCategory :=
   ⟨LaxMonoidalCategory.to_PreMonoidalCategory⟩
 
 
@@ -210,7 +211,7 @@ structure OplaxMonoidalCategory
 
 attribute [class] OplaxMonoidalCategory
 attribute [instance] OplaxMonoidalCategory.to_PreMonoidalCategory
-instance OplaxMonoidalCategory_coercion : has_coe OplaxMonoidalCategory PreMonoidalCategory := 
+instance OplaxMonoidalCategory_coercion : has_coe OplaxMonoidalCategory PreMonoidalCategory :=
   ⟨OplaxMonoidalCategory.to_PreMonoidalCategory⟩
 
 structure MonoidalCategory
@@ -247,7 +248,7 @@ lemma test (C: MonoidalCategory) : MonoidalCategory.identity C = Category.identi
    blast
   end
 
-definition tensor_on_left (C: MonoidalCategory) (X: C^.Obj) : Functor C C := 
+definition tensor_on_left (C: MonoidalCategory) (X: C^.Obj) : Functor C C :=
   {
     onObjects := λ A, X ⊗ A,
     onMorphisms := --λ A B f, (C^.identity X) ⊗ f,
@@ -261,18 +262,16 @@ definition tensor_on_left (C: MonoidalCategory) (X: C^.Obj) : Functor C C :=
                     rewrite ids,
                     exact H -- blast doesn't work here?!
                   end,
-    functoriality := begin
-                       intros,
-                     end
+    functoriality := sorry
   }
 
 structure NaturalTransformation { C D : Category } ( F G : Functor C D ) :=
   (components: Π A : C^.Obj, D^.Hom (F A) (G A))
   (naturality: Π { A B : C^.Obj }, Π f : C^.Hom A B, D^.compose (F <$> f) (components B) = D^.compose (components A) (G <$> f))
 
-instance NaturalTransformation_to_components { C D : Category } { F G : Functor C D } : has_coe_to_fun (NaturalTransformation F G) := 
-{ F   := λ f, Π A : C^.Obj, D^.Hom (F A) (G A), 
-  coe := NaturalTransformation.components } 
+instance NaturalTransformation_to_components { C D : Category } { F G : Functor C D } : has_coe_to_fun (NaturalTransformation F G) :=
+{ F   := λ f, Π A : C^.Obj, D^.Hom (F A) (G A),
+  coe := NaturalTransformation.components }
 
 definition IdentityNaturalTransformation { C D : Category } (F : Functor C D) : NaturalTransformation F F :=
   {
@@ -333,7 +332,7 @@ structure BraidedMonoidalCategory
 -- TODO define a symmetric monoidal category
 
 structure EnrichedCategory :=
-  (V: MonoidalCategory) 
+  (V: MonoidalCategory)
   (Obj : Type )
   (Hom : Obj -> Obj -> V^.Obj)
   (compose :  Π ⦃A B C : Obj⦄, V^.Hom ((Hom A B) ⊗ (Hom B C)) (Hom A C))
