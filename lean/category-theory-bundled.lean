@@ -79,34 +79,34 @@ instance DoublingAsFunctor : Functor ℕCategory ℕCategory :=
     functoriality := by blast
   }
 
-open prod
+--open prod
 
 instance ProductCategory (C : Category) (D : Category) :
   Category :=
   {
     Obj := C^.Obj × D^.Obj,
-    Hom := (λ a b : C^.Obj × D^.Obj, C^.Hom (fst a) (fst b) × D^.Hom (snd a) (snd b)),
-    identity := λ a, (C^.identity (fst a), D^.identity (snd a)),
-    compose  := λ a b c f g, (C^.compose (fst f) (fst g), D^.compose (snd f) (snd g)),
+    Hom := (λ a b : C^.Obj × D^.Obj, C^.Hom (a^.fst) (b^.fst) × D^.Hom (a^.snd) (b^.snd)),
+    identity := λ a, (C^.identity (a^.fst), D^.identity (a^.snd)),
+    compose  := λ a b c f g, (C^.compose (f^.fst) (g^.fst), D^.compose (f^.snd) (g^.snd)),
 
     left_identity  := begin
                         intros,
-                        pose x := C^.left_identity (fst f),
-                        pose y := D^.left_identity (snd f),
+                        pose x := C^.left_identity (f^.fst),
+                        pose y := D^.left_identity (f^.snd),
                         induction f,
                         blast
                       end,
     right_identity := begin
                         intros,
-                        pose x := C^.right_identity (fst f),
-                        pose y := D^.right_identity (snd f),
+                        pose x := C^.right_identity (f^.fst),
+                        pose y := D^.right_identity (f^.snd),
                         induction f,
                         blast
                       end,
     associativity  := begin
                         intros,
-                        pose x := C^.associativity (fst f) (fst g) (fst h),
-                        pose y := D^.associativity (snd f) (snd g) (snd h),
+                        pose x := C^.associativity (f^.fst) (g^.fst) (h^.fst),
+                        pose y := D^.associativity (f^.snd) (g^.snd) (h^.snd),
                         induction f,
                         blast
                       end
@@ -117,15 +117,15 @@ namespace ProductCategory
 end ProductCategory
 
 def ℕTensorProduct : Functor (ℕCategory × ℕCategory) ℕCategory :=
-  { onObjects     := fst,
-    onMorphisms   := λ A B n, fst n + snd n,
+  { onObjects     := prod.fst,
+    onMorphisms   := λ A B n, n^.fst + n^.snd,
     identities    := by blast,
     functoriality := by blast
   }
 
 structure PreMonoidalCategory
   -- this is only for internal use: it has a tensor product, but no associator at all
-  -- it's not interesting mathematically, but allows us to introduce usable notation for the tensor product
+  -- it's not interesting mathematically, but may allow us to introduce usable notation for the tensor product
   extends carrier : Category :=
   (tensor : Functor (carrier × carrier) carrier)
   (tensor_unit : Obj)
@@ -242,19 +242,28 @@ definition identity_functor (C : MonoidalCategory) : Functor C C :=
 
 open Functor
 
-/- okay, this seems to be a serious difficulty -/
+lemma test (C: MonoidalCategory) : MonoidalCategory.identity C = Category.identity C :=
+  begin
+   blast
+  end
+
 definition tensor_on_left (C: MonoidalCategory) (X: C^.Obj) : Functor C C := 
   {
     onObjects := λ A, X ⊗ A,
-    onMorphisms := λ A B f, (C^.identity X) ⊗ f, -- C^.tensor <$> (C^.identity X, f),
-    identities := --begin
-                  --  intros,
-                  --  pose H := identities (@tensor Obj Hom C) (X, A),
-                  --  -- sadly, that's not enough
-                  --  sorry
-                  --end,
-                  by sorry,
-    functoriality := by sorry
+    onMorphisms := --λ A B f, (C^.identity X) ⊗ f,
+                   --λ A B f, C^.tensor <$> (C^.identity X, f),
+                   --λ A B f, onMorphisms (C^.tensor) (C^.identity X f),
+                   λ A B f, @onMorphisms _ _ (C^.tensor) (X, A) (X, B) (C^.identity X, f),
+    identities := begin
+                    intros,
+                    pose H := identities (C^.tensor) (X, A),
+                    assert ids : Category.identity C = MonoidalCategory.identity C, blast,
+                    rewrite ids,
+                    exact H -- blast doesn't work here?!
+                  end,
+    functoriality := begin
+                       intros,
+                     end
   }
 
 structure NaturalTransformation { C D : Category } ( F G : Functor C D ) :=
@@ -272,17 +281,17 @@ definition IdentityNaturalTransformation { C D : Category } (F : Functor C D) : 
                     intros,
                     pose x := F^.identities A,
                     pose y := F^.identities B,
-                    by sorry -- TODO Stephen, can you show me how to complete this proof? is it a matter of reversing the equations, then blasting?
+                    pose w := D^.left_identity (F <$> f),
+                    pose z := D^.right_identity (F <$> f),
+                    blast
+                    -- TODO Stephen, can you work out how to complete this proof?
                   end
   }
 
 definition vertical_composition_of_NaturalTransformations { C D : Category } { F G H : Functor C D } ( α : NaturalTransformation F G ) ( β : NaturalTransformation G H ) : NaturalTransformation F H :=
   {
     components := λ A, D^.compose (α A) (β A),
-    naturality := begin
-                   intros,
-                   sorry
-                  end
+    naturality := sorry
   }
 
 structure Isomorphism ( C: Category ) ( A B : C^.Obj ) :=
@@ -304,11 +313,11 @@ instance FunctorCategory ( C D : Category ) : Category :=
   Hom := λ F G, NaturalTransformation F G,
 
   identity := λ F, IdentityNaturalTransformation F,
-  compose := by sorry,
+  compose := @vertical_composition_of_NaturalTransformations C D,
 
-  left_identity := by sorry,
-  right_identity := by sorry,
-  associativity := by sorry
+  left_identity := sorry,
+  right_identity := sorry,
+  associativity := sorry
 }
 
 definition NaturalIsomorphism { C D : Category } ( F G : Functor C D ) := Isomorphism (FunctorCategory C D) F G
