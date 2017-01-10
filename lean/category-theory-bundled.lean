@@ -68,6 +68,22 @@ instance Functor_to_onObjects { C₁ C₂ : Category }: has_coe_to_fun (Functor 
 --{ F   := λ f, Π ⦃A B : C₁^.Obj⦄, C₁^.Hom A B → C₂^.Hom (f A) (f B),
 --  coe := Functor.onMorphisms }
 
+instance IdentityFunctor ( C: Category ) : Functor C C :=
+{
+  onObjects := λ A, A,
+  onMorphisms := λ A B f, f,
+  identities := by blast,
+  functoriality := by blast
+}
+
+instance FunctorComposition { C D E : Category } ( F : Functor C D ) ( G : Functor D E ) : Functor C E :=
+{
+  onObjects := λ A, G (F A),
+  onMorphisms := λ A B f, G <$> (F <$> f),
+  identities := sorry,
+  functoriality := sorry
+}
+
 instance DoublingAsFunctor : Functor ℕCategory ℕCategory :=
   { onObjects   := id,
     onMorphisms := (λ A B n, n + n),
@@ -79,7 +95,47 @@ instance DoublingAsFunctor : Functor ℕCategory ℕCategory :=
     functoriality := by blast
   }
 
---open prod
+structure NaturalTransformation { C D : Category } ( F G : Functor C D ) :=
+  (components: Π A : C^.Obj, D^.Hom (F A) (G A))
+  (naturality: Π { A B : C^.Obj }, Π f : C^.Hom A B, D^.compose (F <$> f) (components B) = D^.compose (components A) (G <$> f))
+
+instance NaturalTransformation_to_components { C D : Category } { F G : Functor C D } : has_coe_to_fun (NaturalTransformation F G) :=
+{ F   := λ f, Π A : C^.Obj, D^.Hom (F A) (G A),
+  coe := NaturalTransformation.components }
+
+-- We'll want to be able to prove that two natural transformations are equal if they are componentwise equal.
+lemma NaturalTransformations_componentwise_equal
+  { C D : Category } 
+  { F G : Functor C D } 
+  ( α β : NaturalTransformation F G )
+  ( w: Π X : C^.Obj, α X = β X ) : α = β :=
+  begin
+    induction α,
+    induction β,
+    -- Argh, how to complete this proof?
+    blast
+  end
+
+definition IdentityNaturalTransformation { C D : Category } (F : Functor C D) : NaturalTransformation F F :=
+  {
+    components := λ A, D^.identity (F A),
+    naturality := begin
+                    intros,
+                    pose x := F^.identities A,
+                    pose y := F^.identities B,
+                    pose w := D^.left_identity (F <$> f),
+                    pose z := D^.right_identity (F <$> f),
+                    blast
+                    -- TODO Stephen, can you work out how to complete this proof?
+                  end
+  }
+
+definition vertical_composition_of_NaturalTransformations { C D : Category } { F G H : Functor C D } ( α : NaturalTransformation F G ) ( β : NaturalTransformation G H ) : NaturalTransformation F H :=
+  {
+    components := λ A, D^.compose (α A) (β A),
+    naturality := sorry
+  }
+
 
 instance ProductCategory (C : Category) (D : Category) :
   Category :=
@@ -116,6 +172,24 @@ namespace ProductCategory
   notation C `×` D := ProductCategory C D
 end ProductCategory
 
+instance ProductFunctor { A B C D : Category } ( F : Functor A B ) ( G : Functor C D ) : Functor (A × C) (B × D) :=
+{
+  onObjects := λ a, (F a^.fst, G a^.snd),
+  onMorphisms := λ a b f, (F <$> f^.fst, G <$> f^.snd),
+  identities := begin
+                  intros o,
+                  induction o,
+                  pose hF := F^.identities fst,
+                  pose hG := G^.identities snd,
+                  exact sorry
+                end,
+  functoriality := sorry
+}
+
+namespace ProductFunctor
+  notation F `×` G := ProductFunctor F G
+end ProductFunctor
+
 def ℕTensorProduct : Functor (ℕCategory × ℕCategory) ℕCategory :=
   { onObjects     := prod.fst,
     onMorphisms   := λ A B n, n^.fst + n^.snd,
@@ -123,7 +197,21 @@ def ℕTensorProduct : Functor (ℕCategory × ℕCategory) ℕCategory :=
     functoriality := by blast
   }
 
+instance SwitchProductCategory { C D : Category } : Functor (C × D) (D × C) :=
+{
+  onObjects := λ A, (A^.snd, A^.fst),
+  onMorphisms := λ A B f, (f^.snd, f^.fst),
+  identities := by blast,
+  functoriality := by blast
+}
 
+instance ProductCategoryAssociator ( C D E : Category ) : Functor ((C × D) × E) (C × (D × E)) :=
+{
+  onObjects := λ A, (A^.fst^.fst, (A^.fst^.snd, A^.snd)),
+  onMorphisms := λ A B f, (f^.fst^.fst, (f^.fst^.snd, f^.snd)),
+  identities := by blast,
+  functoriality := by blast
+}
 
 structure PreMonoidalCategory
   -- this is only for internal use: it has a tensor product, but no associator at all
@@ -133,7 +221,6 @@ structure PreMonoidalCategory
   (tensor_unit : Obj)
   (interchange: Π { A B C D E F: Obj }, Π f : Hom A B, Π g : Hom B C, Π h : Hom D E, Π k : Hom E F, 
     @Functor.onMorphisms _ _ tensor (A, D) (C, F) ((compose f g), (compose h k)) = compose (@Functor.onMorphisms _ _ tensor (A, D) (B, E) (f, h)) (@Functor.onMorphisms _ _ tensor (B, E) (C, F) (g, k)))
-
 
 namespace PreMonoidalCategory
   infix `⊗`:70 := λ {C : PreMonoidalCategory} (A B : C^.Obj),
@@ -149,14 +236,17 @@ attribute [instance] PreMonoidalCategory.to_Category
 instance PreMonoidalCategory_coercion : has_coe PreMonoidalCategory Category := 
   ⟨PreMonoidalCategory.to_Category⟩
 
-open PreMonoidalCategory
+definition left_associated_triple_tensor ( C : PreMonoidalCategory ) : Functor ((C × C) × C) C :=
+  FunctorComposition (C^.tensor × IdentityFunctor C) C^.tensor
+definition right_associated_triple_tensor ( C : PreMonoidalCategory ) : Functor (C × (C × C)) C :=
+  FunctorComposition (IdentityFunctor C × C^.tensor) C^.tensor
 
 structure LaxMonoidalCategory
   extends carrier : PreMonoidalCategory :=
-
+  (associator' : NaturalTransformation (left_associated_triple_tensor carrier) (FunctorComposition (ProductCategoryAssociator carrier carrier carrier) (right_associated_triple_tensor carrier)))
   (associator : Π (A B C : Obj),
      Hom (tensor (tensor (A, B), C)) (tensor (A, tensor (B, C)))) 
-     
+
 -- Why can't we use notation here? It seems with slightly cleverer type checking it should work.
 -- If we really can't make this work, remove PreMonoidalCategory, as it's useless.
 
@@ -285,46 +375,6 @@ definition tensor_on_right (C: MonoidalCategory) (X: C^.Obj) : Functor C C :=
     functoriality := sorry
   }
 
-structure NaturalTransformation { C D : Category } ( F G : Functor C D ) :=
-  (components: Π A : C^.Obj, D^.Hom (F A) (G A))
-  (naturality: Π { A B : C^.Obj }, Π f : C^.Hom A B, D^.compose (F <$> f) (components B) = D^.compose (components A) (G <$> f))
-
-instance NaturalTransformation_to_components { C D : Category } { F G : Functor C D } : has_coe_to_fun (NaturalTransformation F G) :=
-{ F   := λ f, Π A : C^.Obj, D^.Hom (F A) (G A),
-  coe := NaturalTransformation.components }
-
--- We'll want to be able to prove that two natural transformations are equal if they are componentwise equal.
-lemma NaturalTransformations_componentwise_equal
-  { C D : Category } 
-  { F G : Functor C D } 
-  ( α β : NaturalTransformation F G )
-  ( w: Π X : C^.Obj, α X = β X ) : α = β :=
-  begin
-    induction α,
-    induction β,
-    -- Argh, how to complete this proof?
-    blast
-  end
-
-definition IdentityNaturalTransformation { C D : Category } (F : Functor C D) : NaturalTransformation F F :=
-  {
-    components := λ A, D^.identity (F A),
-    naturality := begin
-                    intros,
-                    pose x := F^.identities A,
-                    pose y := F^.identities B,
-                    pose w := D^.left_identity (F <$> f),
-                    pose z := D^.right_identity (F <$> f),
-                    blast
-                    -- TODO Stephen, can you work out how to complete this proof?
-                  end
-  }
-
-definition vertical_composition_of_NaturalTransformations { C D : Category } { F G H : Functor C D } ( α : NaturalTransformation F G ) ( β : NaturalTransformation G H ) : NaturalTransformation F H :=
-  {
-    components := λ A, D^.compose (α A) (β A),
-    naturality := sorry
-  }
 
 structure Isomorphism ( C: Category ) ( A B : C^.Obj ) :=
   (morphism : C^.Hom A B)
