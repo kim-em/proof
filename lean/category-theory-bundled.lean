@@ -1,5 +1,7 @@
 import standard
 
+noncomputable theory -- so that we can shamelessly use sorry
+
 meta def blast : tactic unit :=
 using_smt $ return ()
 
@@ -38,34 +40,32 @@ instance ℕCategory : Category :=
 
 --open Category
 
--- maybe it's weird to have Category bundled and Functor parameterized ... but that's the deal for now.
-
-structure Functor (C₁ : Category) (C₂ : Category) :=
-  (onObjects   : C₁^.Obj → C₂^.Obj)
-  (onMorphisms : Π ⦃A B : C₁^.Obj⦄,
-                C₁^.Hom A B → C₂^.Hom (onObjects A) (onObjects B))
-  (identities : Π (A : C₁^.Obj),
-    onMorphisms (C₁^.identity A) = C₂^.identity (onObjects A))
-  (functoriality : Π ⦃A B C : C₁^.Obj⦄ (f : C₁^.Hom A B) (g : C₁^.Hom B C),
-    onMorphisms (C₁^.compose f g) = C₂^.compose (onMorphisms f) (onMorphisms g))
+structure Functor (C : Category) (D : Category) :=
+  (onObjects   : C^.Obj → D^.Obj)
+  (onMorphisms : Π ⦃A B : C^.Obj⦄,
+                C^.Hom A B → D^.Hom (onObjects A) (onObjects B))
+  (identities : Π (A : C^.Obj),
+    onMorphisms (C^.identity A) = D^.identity (onObjects A))
+  (functoriality : Π ⦃X Y Z : C^.Obj⦄ (f : C^.Hom X Y) (g : C^.Hom Y Z),
+    onMorphisms (C^.compose f g) = D^.compose (onMorphisms f) (onMorphisms g))
 
 attribute [class] Functor
 
 namespace Functor
   -- Lean complains about the use of local variables in
   -- notation. There must be a way around that.
-  infix `<$>`:50 := λ {C₁ : Category} {C₂ : Category}
-                      (F : Functor C₁ C₂) {A B : C₁^.Obj} (f : C₁^.Hom A B),
+  infix `<$>`:50 := λ {C : Category} {D : Category}
+                      (F : Functor C D) {A B : C^.Obj} (f : C^.Hom A B),
                       onMorphisms F f
 end Functor
 
-instance Functor_to_onObjects { C₁ C₂ : Category }: has_coe_to_fun (Functor C₁ C₂) :=
-{ F   := λ f, C₁^.Obj -> C₂^.Obj,
+instance Functor_to_onObjects { C D : Category }: has_coe_to_fun (Functor C D) :=
+{ F   := λ f, C^.Obj -> D^.Obj,
   coe := Functor.onObjects }
 
 -- This now seems to work on its own, but there's some confusion when both this an to_onObjects are in scope. How to we resolve the ambiguity?
---instance Functor_to_onMorphisms { C₁ C₂ : Category } : has_coe_to_fun (Functor C₁ C₂) :=
---{ F   := λ f, Π ⦃A B : C₁^.Obj⦄, C₁^.Hom A B → C₂^.Hom (f A) (f B),
+--instance Functor_to_onMorphisms { C D : Category } : has_coe_to_fun (Functor C D) :=
+--{ F   := λ f, Π ⦃A B : C^.Obj⦄, C^.Hom A B → D^.Hom (f A) (f B),
 --  coe := Functor.onMorphisms }
 
 instance IdentityFunctor ( C: Category ) : Functor C C :=
@@ -80,8 +80,18 @@ instance FunctorComposition { C D E : Category } ( F : Functor C D ) ( G : Funct
 {
   onObjects := λ A, G (F A),
   onMorphisms := λ A B f, G <$> (F <$> f),
-  identities := sorry,
-  functoriality := sorry
+  identities := begin
+                  intros,
+                  pose hF := F^.identities A,
+                  pose hG := G^.identities (F A),
+                  exact sorry
+                end,
+  functoriality := begin
+                     intros,
+                     pose hF := @Functor.functoriality C D F X Y Z f g,
+                     pose hG := @Functor.functoriality D E G (F X) (F Y) (F Z) (F <$> f) (F <$> g),
+                     --exact sorry                     
+                   end
 }
 
 instance DoublingAsFunctor : Functor ℕCategory ℕCategory :=
@@ -125,8 +135,8 @@ definition IdentityNaturalTransformation { C D : Category } (F : Functor C D) : 
                     pose y := F^.identities B,
                     pose w := D^.left_identity (F <$> f),
                     pose z := D^.right_identity (F <$> f),
-                    blast
                     -- TODO Stephen, can you work out how to complete this proof?
+                    exact sorry
                   end
   }
 
@@ -197,7 +207,7 @@ def ℕTensorProduct : Functor (ℕCategory × ℕCategory) ℕCategory :=
     functoriality := by blast
   }
 
-instance SwitchProductCategory { C D : Category } : Functor (C × D) (D × C) :=
+instance SwitchProductCategory ( C D : Category ) : Functor (C × D) (D × C) :=
 {
   onObjects := λ A, (A^.snd, A^.fst),
   onMorphisms := λ A B f, (f^.snd, f^.fst),
@@ -241,9 +251,34 @@ definition left_associated_triple_tensor ( C : PreMonoidalCategory ) : Functor (
 definition right_associated_triple_tensor ( C : PreMonoidalCategory ) : Functor (C × (C × C)) C :=
   FunctorComposition (IdentityFunctor C × C^.tensor) C^.tensor
 
+definition Associator ( C : PreMonoidalCategory ) := 
+  NaturalTransformation 
+    (left_associated_triple_tensor C) 
+    (FunctorComposition (ProductCategoryAssociator C C C) (right_associated_triple_tensor C))
+
+--print Associator
+definition associator_components ( C : PreMonoidalCategory ) := Π a b c : C^.Obj, C^.Hom  (C^.tensor (C^.tensor (a, b), c)) (C^.tensor (a, C^.tensor (b, c)))
+
+definition associator_to_components { C : PreMonoidalCategory } ( α : Associator C ) : associator_components C := 
+begin
+ blast,
+ pose r := α^.components ((a,b),c),
+ exact sorry
+end
+
+/- 
+-- This should be impossible to prove in general, as of course the components might not
+-- satisfy naturality. I'm imagining, however, that it might be possible to write a
+-- strategy that, once it has seen the actual components, blasts naturality...
+-/
+definition associator_from_components { C: PreMonoidalCategory } ( α : associator_components C ) : Associator C :=
+  begin
+    exact sorry
+  end
+
 structure LaxMonoidalCategory
   extends carrier : PreMonoidalCategory :=
-  (associator' : NaturalTransformation (left_associated_triple_tensor carrier) (FunctorComposition (ProductCategoryAssociator carrier carrier carrier) (right_associated_triple_tensor carrier)))
+  --(associator' : Associator carrier)
   (associator : Π (A B C : Obj),
      Hom (tensor (tensor (A, B), C)) (tensor (A, tensor (B, C)))) 
 
@@ -382,7 +417,6 @@ structure Isomorphism ( C: Category ) ( A B : C^.Obj ) :=
   (witness_1 : C^.compose morphism inverse = C^.identity A)
   (witness_2 : C^.compose inverse morphism = C^.identity B)
 
--- For now, this kills Lean, cf https://github.com/leanprover/lean/issues/1290
 instance Isomorphism_coercion_to_morphism { C : Category } { A B : C^.Obj } : has_coe (Isomorphism C A B) (C^.Hom A B) :=
   { coe := Isomorphism.morphism }
 
@@ -404,19 +438,20 @@ instance FunctorCategory ( C D : Category ) : Category :=
 
 definition NaturalIsomorphism { C D : Category } ( F G : Functor C D ) := Isomorphism (FunctorCategory C D) F G
 
--- TODO definition tensor_on_right
--- TODO define natural transformations between functors
--- TODO define a natural isomorphism
--- TODO define a braided monoidal category
+-- TODO I'm confused how to even say this!
+--lemma components_of_NaturalIsomorphism_are_isomorphisms { C D : Category } { F G : Functor C D } ( α : NaturalIsomorphism F G ) ....?
+
 structure BraidedMonoidalCategory
-  extends MonoidalCategory :=
-  (braiding: Π A : Obj, NaturalIsomorphism (tensor_on_left A) (tensor_on_right A))
--- on second thoughts, defining the braiding as a natural isomorphism perhaps makes little sennse;
--- easier to just say what it is componentwise, and leave it as a lemma that these components form natural transformations?
--- hmm...!?
+  extends parent: MonoidalCategory :=
+  (braiding: NaturalIsomorphism (tensor) (FunctorComposition (SwitchProductCategory parent parent) tensor))
 
+--print BraidedMonoidalCategory
 
--- TODO define a symmetric monoidal category
+-- Coercion of a NaturalIsomorphism to a NaturalTransformation doesn't seem to work. :-(
+
+structure SymmetricMonoidalCategory
+  extends parent: BraidedMonoidalCategory :=
+  (symmetry: vertical_composition_of_NaturalTransformations braiding braiding = IdentityNaturalTransformation (IdentityFunctor (parent × parent)))
 
 structure EnrichedCategory :=
   (V: MonoidalCategory)
@@ -424,8 +459,6 @@ structure EnrichedCategory :=
   (Hom : Obj -> Obj -> V^.Obj)
   (compose :  Π ⦃A B C : Obj⦄, V^.Hom ((Hom A B) ⊗ (Hom B C)) (Hom A C))
   -- TODO and so on
-
--- How do you define a structure which extends another, but has no new fields?
 
 -- TODO How would we define an additive category, now? We don't want to say:
 --   Hom : Obj -> Obj -> AdditiveGroup
