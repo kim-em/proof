@@ -113,7 +113,7 @@ lemma NaturalTransformations_componentwise_equal
     induction α,
     induction β,
     -- Argh, how to complete this proof?
-    blast
+    exact sorry
   end
 
 definition IdentityNaturalTransformation { C D : Category } (F : Functor C D) : NaturalTransformation F F :=
@@ -363,7 +363,7 @@ definition tensor_on_left (C: MonoidalCategory) (X: C^.Obj) : Functor C C :=
                   end,
     functoriality := begin
                        intros, -- this will require the interchange axiom for MonoidalCategory, but I don't know how to do it.
-                       blast
+                       exact sorry
                      end
   }
 
@@ -397,7 +397,7 @@ instance FunctorCategory ( C D : Category ) : Category :=
   identity := λ F, IdentityNaturalTransformation F,
   compose := @vertical_composition_of_NaturalTransformations C D,
 
-  left_identity := sorry -- these facts all rely on NaturalTransformations_componentwise_equal above.
+  left_identity := sorry, -- these facts all rely on NaturalTransformations_componentwise_equal above.
   right_identity := sorry,
   associativity := sorry
 }
