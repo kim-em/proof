@@ -1,7 +1,5 @@
 import standard
 
-noncomputable theory -- so that we can shamelessly use sorry
-
 meta def blast : tactic unit :=
 using_smt $ return ()
 
@@ -82,15 +80,11 @@ instance FunctorComposition { C D E : Category } ( F : Functor C D ) ( G : Funct
   onMorphisms := λ A B f, G <$> (F <$> f),
   identities := begin
                   intros,
-                  pose hF := F^.identities A,
-                  pose hG := G^.identities (F A),
-                  exact sorry
+                  rewrite [ - G^.identities, - F^.identities ]
                 end,
   functoriality := begin
                      intros,
-                     pose hF := @Functor.functoriality C D F X Y Z f g,
-                     pose hG := @Functor.functoriality D E G (F X) (F Y) (F Z) (F <$> f) (F <$> g),
-                     --exact sorry                     
+                     rewrite [ - G^.functoriality, - F^.functoriality ]
                    end
 }
 
@@ -131,19 +125,23 @@ definition IdentityNaturalTransformation { C D : Category } (F : Functor C D) : 
     components := λ A, D^.identity (F A),
     naturality := begin
                     intros,
-                    pose x := F^.identities A,
-                    pose y := F^.identities B,
-                    pose w := D^.left_identity (F <$> f),
-                    pose z := D^.right_identity (F <$> f),
-                    -- TODO Stephen, can you work out how to complete this proof?
-                    exact sorry
+                    rewrite [ D^.left_identity, D^.right_identity ]
                   end
   }
 
 definition vertical_composition_of_NaturalTransformations { C D : Category } { F G H : Functor C D } ( α : NaturalTransformation F G ) ( β : NaturalTransformation G H ) : NaturalTransformation F H :=
   {
     components := λ A, D^.compose (α A) (β A),
-    naturality := sorry
+    naturality := begin
+                    intros,
+                    /- this proof was written by a sufficient stupid process that I am confident a computer
+                    -- could have done it! -/
+                    rewrite D^.associativity,
+                    rewrite - β^.naturality,
+                    rewrite - D^.associativity,
+                    rewrite α^.naturality,
+                    rewrite D^.associativity
+                  end
   }
 
 
@@ -157,24 +155,19 @@ instance ProductCategory (C : Category) (D : Category) :
 
     left_identity  := begin
                         intros,
-                        pose x := C^.left_identity (f^.fst),
-                        pose y := D^.left_identity (f^.snd),
+                        rewrite [ C^.left_identity, D^.left_identity ],
                         induction f,
-                        blast
+                        simp
                       end,
     right_identity := begin
                         intros,
-                        pose x := C^.right_identity (f^.fst),
-                        pose y := D^.right_identity (f^.snd),
+                        rewrite [ C^.right_identity, D^.right_identity],
                         induction f,
-                        blast
+                        simp
                       end,
     associativity  := begin
                         intros,
-                        pose x := C^.associativity (f^.fst) (g^.fst) (h^.fst),
-                        pose y := D^.associativity (f^.snd) (g^.snd) (h^.snd),
-                        induction f,
-                        blast
+                        rewrite [ C^.associativity, D^.associativity ]
                       end
   }
 
@@ -190,10 +183,13 @@ instance ProductFunctor { A B C D : Category } ( F : Functor A B ) ( G : Functor
                   intros o,
                   induction o,
                   pose hF := F^.identities fst,
-                  pose hG := G^.identities snd,
+                  pose hG := G^.identities snd,                  
                   exact sorry
                 end,
-  functoriality := sorry
+  functoriality := begin
+                     intros,
+                     exact sorry
+                   end
 }
 
 check ProductFunctor
@@ -211,17 +207,17 @@ def ℕTensorProduct : Functor (ℕCategory × ℕCategory) ℕCategory :=
 
 instance SwitchProductCategory ( C D : Category ) : Functor (C × D) (D × C) :=
 {
-  onObjects := λ A, (A^.snd, A^.fst),
-  onMorphisms := λ A B f, (f^.snd, f^.fst),
-  identities := by blast,
+  onObjects     := λ A, (A^.snd, A^.fst),
+  onMorphisms   := λ A B f, (f^.snd, f^.fst),
+  identities    := by blast,
   functoriality := by blast
 }
 
 instance ProductCategoryAssociator ( C D E : Category ) : Functor ((C × D) × E) (C × (D × E)) :=
 {
-  onObjects := λ A, (A^.fst^.fst, (A^.fst^.snd, A^.snd)),
-  onMorphisms := λ A B f, (f^.fst^.fst, (f^.fst^.snd, f^.snd)),
-  identities := by blast,
+  onObjects     := λ A, (A^.fst^.fst, (A^.fst^.snd, A^.snd)),
+  onMorphisms   := λ A B f, (f^.fst^.fst, (f^.fst^.snd, f^.snd)),
+  identities    := by blast,
   functoriality := by blast
 }
 
@@ -271,7 +267,7 @@ end
 /- 
 -- This should be impossible to prove in general, as of course the components might not
 -- satisfy naturality. I'm imagining, however, that it might be possible to write a
--- strategy that, once it has seen the actual components, blasts naturality...
+-- tactic that, once it has seen the actual components, blasts naturality...
 -/
 definition associator_from_components { C: PreMonoidalCategory } ( α : associator_components C ) : Associator C :=
   begin
@@ -323,21 +319,13 @@ instance LaxMonoidalCategory_coercion : has_coe LaxMonoidalCategory PreMonoidalC
 
 def ℕLaxMonoidalCategory : LaxMonoidalCategory :=
   { ℕCategory with
-    tensor     := ℕTensorProduct,
-    tensor_unit       := (),
-    associator := λ A B C, Category.identity ℕCategory (),
-    interchange := sorry
+    tensor       := ℕTensorProduct,
+    tensor_unit  := (),
+    associator   := λ A B C, Category.identity ℕCategory (),
+    interchange  := begin
+                      exact sorry -- should be trivial, but how?
+                    end
   }
-
-
-/-
-instance DoublingAsFunctor' : Functor ℕLaxMonoidalCategory ℕLaxMonoidalCategory :=
-  { onObjects   := id,
-    onMorphisms := λ A B n, n + n, -- no idea what is going wrong here
-    identities    := by blast,
-    functoriality := by blast
-  }
--/
 
 structure OplaxMonoidalCategory
   extends carrier : PreMonoidalCategory :=
@@ -368,21 +356,6 @@ namespace MonoidalCategory
                      C^.tensor <$> (f, g)
 end MonoidalCategory
 
--- and another test
-definition identity_functor (C : MonoidalCategory) : Functor C C :=
-{
-  onObjects := λ a, a,
-  onMorphisms := λ a b f, f,
-  identities := by blast,
-  functoriality := by blast
-}
-
-open Functor
-
-lemma test (C: MonoidalCategory) : MonoidalCategory.identity C = Category.identity C :=
-  begin
-   blast
-  end
 
 definition tensor_on_left (C: MonoidalCategory) (X: C^.Obj) : Functor C C :=
   {
@@ -390,28 +363,24 @@ definition tensor_on_left (C: MonoidalCategory) (X: C^.Obj) : Functor C C :=
     onMorphisms := --λ A B f, (C^.identity X) ⊗ f,
                    --λ A B f, C^.tensor <$> (C^.identity X, f),
                    --λ A B f, onMorphisms (C^.tensor) (C^.identity X f),
-                   λ A B f, @onMorphisms _ _ (C^.tensor) (X, A) (X, B) (C^.identity X, f),
+                   λ A B f, @Functor.onMorphisms _ _ (C^.tensor) (X, A) (X, B) (C^.identity X, f),
     identities := begin
                     intros,
-                    pose H := identities (C^.tensor) (X, A),
+                    pose H := Functor.identities (C^.tensor) (X, A),
+                    -- these next two steps are ridiculous... surely we shouldn't have to do this.
                     assert ids : Category.identity C = MonoidalCategory.identity C, blast,
                     rewrite ids,
                     exact H -- blast doesn't work here?!
                   end,
     functoriality := begin
-                       intros, -- this will require the interchange axiom for MonoidalCategory, but I don't know how to do it.
-                       exact sorry
+                       intros,
+                       -- similarly here
+                       assert composes : Category.compose C = MonoidalCategory.compose C, blast, 
+                       rewrite composes,
+                       rewrite - C^.interchange,
+                       rewrite C^.left_identity
                      end
   }
-
-definition tensor_on_right (C: MonoidalCategory) (X: C^.Obj) : Functor C C :=
-  {
-    onObjects := λ A, A ⊗ X,
-    onMorphisms := sorry,
-    identities := sorry,
-    functoriality := sorry
-  }
-
 
 structure Isomorphism ( C: Category ) ( A B : C^.Obj ) :=
   (morphism : C^.Hom A B)
@@ -446,8 +415,6 @@ definition NaturalIsomorphism { C D : Category } ( F G : Functor C D ) := Isomor
 structure BraidedMonoidalCategory
   extends parent: MonoidalCategory :=
   (braiding: NaturalIsomorphism (tensor) (FunctorComposition (SwitchProductCategory parent parent) tensor))
-
---print BraidedMonoidalCategory
 
 -- Coercion of a NaturalIsomorphism to a NaturalTransformation doesn't seem to work. :-(
 
