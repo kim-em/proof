@@ -196,6 +196,8 @@ instance ProductFunctor { A B C D : Category } ( F : Functor A B ) ( G : Functor
   functoriality := sorry
 }
 
+check ProductFunctor
+
 namespace ProductFunctor
   notation F `×` G := ProductFunctor F G
 end ProductFunctor
