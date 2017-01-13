@@ -1,16 +1,21 @@
 set_option pp.implicit true
 
-class foo {A : Type} (F : A → Type) :=
-  (bar : Π {a : A}, F a)
-  (baz : Π {a : A}, F a → F a)
+class foo {A : Type} :=
+  (bar : A)
+  (baz : A → A)
 
 print foo
+-- attribute [class]
+-- structure foo : Π {A : Type}, Type
+-- fields:
+-- foo.bar : (A : Type) [c : @foo A], A
+-- foo.baz : {A : Type} [c : @foo A], A → A
 
--- I guess the issue here is that since the field is a function
--- F a → F a, what exactly F is isn't necessary to know for any given
--- a, the function encodes its domain, and that's all that's
--- necessary. This may be somewhat counter-intuitive in our case, but
--- I can think of examples where this would be the desired
--- behaviour. The best solution is probably to define helper functions
--- when this would cause problems.
+-- I guess the issue here is that since the field baz is a function
+-- A → A, the data of what A is contained in the definition of the
+-- function (as its domain).
+-- This may be somewhat counter-intuitive in our case, but I can think
+-- of examples where this would be the desired behaviour. The best
+-- solution is probably to define helper functions when this would
+-- cause problems.
 
