@@ -6,13 +6,16 @@ import .category
 import .functor
 
 open tqft.categories
+open tqft.categories.notations
 open tqft.categories.functor
+open tqft.categories.functor.notations
 
 namespace tqft.categories.natural_transformation
 
 structure NaturalTransformation { C D : Category } ( F G : Functor C D ) :=
   (components: Π X : C^.Obj, D^.Hom (F X) (G X))
-  (naturality: Π { X Y : C^.Obj }, Π f : C^.Hom X Y, D^.compose (F <$> f) (components Y) = D^.compose (components X) (G <$> f))
+  (naturality: ∀ { X Y : C^.Obj } (f : C^.Hom X Y),
+     (F <$> f) ∘ components Y = components X ∘ (G <$> f))
 
 -- This defines a coercion so we can write `α X` for `components α X`.
 instance NaturalTransformation_to_components { C D : Category } { F G : Functor C D } : has_coe_to_fun (NaturalTransformation F G) :=
@@ -24,13 +27,20 @@ lemma NaturalTransformations_componentwise_equal
   { C D : Category } 
   { F G : Functor C D } 
   ( α β : NaturalTransformation F G )
-  ( w: Π X : C^.Obj, α X = β X ) : α = β :=
-  begin
-    induction α,
-    induction β,
-    -- Argh, how to complete this proof?
-    exact sorry
-  end
+  ( w : ∀ X : C^.Obj, α X = β X ) : α = β :=
+  match α with
+  | NaturalTransformation.mk α_components α_naturality :=
+  match β with
+  | NaturalTransformation.mk β_components β_naturality :=
+  have α_components = β_components, from funext w,
+  by trivial
+  --begin
+  --  induction α with α_components α_naturality,
+  --  induction β with β_components β_naturality,
+  --  apply (funext w)
+  --  -- Argh, how to complete this proof?
+  --  --exact sorry
+  --end
 
 definition IdentityNaturalTransformation { C D : Category } (F : Functor C D) : NaturalTransformation F F :=
   {
