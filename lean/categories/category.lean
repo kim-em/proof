@@ -39,12 +39,13 @@ namespace notations
   infixl `⟶` :25 := Category.Hom _ 
 end notations
 
+open notations
 
 structure Isomorphism ( C: Category ) ( X Y : C^.Obj ) :=
   (morphism : C^.Hom X Y)
   (inverse : C^.Hom Y X)
-  (witness_1 : C^.compose morphism inverse = C^.identity X)
-  (witness_2 : C^.compose inverse morphism = C^.identity Y)
+  (witness_1 : morphism ∘ inverse = C^.identity X)
+  (witness_2 : inverse ∘ morphism = C^.identity Y)
 
 instance Isomorphism_coercion_to_morphism { C : Category } { X Y : C^.Obj } : has_coe (Isomorphism C X Y) (C^.Hom X Y) :=
   { coe := Isomorphism.morphism }
