@@ -1,24 +1,40 @@
 import standard
 
-meta def blast : tactic unit :=
-using_smt $ return ()
+-- Lean's SMT tactic isn't yet hooked up by default. This snippet makes 'blast' available as an all purpose tactic.
+meta def blast : tactic unit := using_smt $ return ()
+
+-- This file develops Categories, Functors, and NaturalTransformations.
+
+/-
+-- As notational conventions, we denote
+-- * Categories by capital latin letters near the begining of the alphabet (C, D, E, and then A, B when needed),
+-- * Objects of categories by capital latin letters near the end of the alphabet,
+-- * Morphisms by lower case latin letters,
+-- * Functors by capital latin letters starting at F,
+-- * NaturalTransformations by greek letters.
+-/
+
+/-
+-- We've decided that Obj and Hom should be fields of Category, rather than parameters.
+-- Mostly this is for the sake of simpler signatures, and it's possible that it is not the right choice.
+-- Functor and NaturalTransformation are each parameterized by both their source and target.
+-/
 
 structure Category :=
   (Obj : Type)
   (Hom : Obj -> Obj -> Type)
-  (identity : Π A : Obj, Hom A A)
-  (compose  : Π ⦃A B C : Obj⦄, Hom A B → Hom B C → Hom A C)
+  (identity : Π X : Obj, Hom X X)
+  (compose  : Π ⦃X Y Z : Obj⦄, Hom X Y → Hom Y Z → Hom X Z)
 
-  (left_identity  : Π ⦃A B : Obj⦄ (f : Hom A B), compose (identity _) f = f)
-  (right_identity : Π ⦃A B : Obj⦄ (f : Hom A B), compose f (identity _) = f)
-  (associativity  : Π ⦃A B C D : Obj⦄ (f : Hom A B) (g : Hom B C) (h : Hom C D),
+  (left_identity  : Π ⦃X Y : Obj⦄ (f : Hom X Y), compose (identity _) f = f)
+  (right_identity : Π ⦃X Y : Obj⦄ (f : Hom X Y), compose f (identity _) = f)
+  (associativity  : Π ⦃W X Y Z : Obj⦄ (f : Hom W X) (g : Hom X Y) (h : Hom Y Z),
     compose (compose f g) h = compose f (compose g h))
 
 attribute [class] Category
 -- declaring it as a class from the beginning results in an insane
 -- signature ... This really seems like it must be a bug, or at least
 -- a rough edge.
--- print Category
 
 instance ℕCategory : Category :=
   {
@@ -36,52 +52,56 @@ instance ℕCategory : Category :=
     associativity  := by blast  --λ a b c d, add_assoc
   }
 
---open Category
-
 structure Functor (C : Category) (D : Category) :=
   (onObjects   : C^.Obj → D^.Obj)
-  (onMorphisms : Π ⦃A B : C^.Obj⦄,
-                C^.Hom A B → D^.Hom (onObjects A) (onObjects B))
-  (identities : Π (A : C^.Obj),
-    onMorphisms (C^.identity A) = D^.identity (onObjects A))
+  (onMorphisms : Π ⦃X Y : C^.Obj⦄,
+                C^.Hom X Y → D^.Hom (onObjects X) (onObjects Y))
+  (identities : Π (X : C^.Obj),
+    onMorphisms (C^.identity X) = D^.identity (onObjects X))
   (functoriality : Π ⦃X Y Z : C^.Obj⦄ (f : C^.Hom X Y) (g : C^.Hom Y Z),
     onMorphisms (C^.compose f g) = D^.compose (onMorphisms f) (onMorphisms g))
 
 attribute [class] Functor
 
-namespace Functor
-  -- Lean complains about the use of local variables in
-  -- notation. There must be a way around that.
-  infix `<$>`:50 := λ {C : Category} {D : Category}
-                      (F : Functor C D) {A B : C^.Obj} (f : C^.Hom A B),
-                      onMorphisms F f
-end Functor
-
+-- We define a coercion so that we can write `F X` for the functor `F` applied to the object `X`.
+-- One can still write out `onObjects F X` when needed.
 instance Functor_to_onObjects { C D : Category }: has_coe_to_fun (Functor C D) :=
 { F   := λ f, C^.Obj -> D^.Obj,
   coe := Functor.onObjects }
 
--- This now seems to work on its own, but there's some confusion when both this an to_onObjects are in scope. How to we resolve the ambiguity?
+-- Unfortunately we haven't been able to set up similar notation for morphisms.
+-- Instead we define notation so that `F <$> f` denotes the functor `F` applied to the morphism `f`.
+-- One can still write out `onMorphisms F f` when needed, or even the very verbose `@Functor.onMorphisms C D F X Y f`.
+namespace Functor
+  -- Lean complains about the use of local variables in
+  -- notation. There must be a way around that.
+  infix `<$>`:50 := λ {C : Category} {D : Category}
+                      (F : Functor C D) {X Y : C^.Obj} (f : C^.Hom X Y),
+                      onMorphisms F f
+end Functor
+
+-- This defines a coercion allowing us to write `F f` for `onMorphisms F f`
+-- but sadly it doesn't work if  to_onObjects is already in scope.
 --instance Functor_to_onMorphisms { C D : Category } : has_coe_to_fun (Functor C D) :=
---{ F   := λ f, Π ⦃A B : C^.Obj⦄, C^.Hom A B → D^.Hom (f A) (f B),
+--{ F   := λ f, Π ⦃X Y : C^.Obj⦄, C^.Hom X Y → D^.Hom (f X) (f Y), -- contrary to usual use, `f` here denotes the Functor.
 --  coe := Functor.onMorphisms }
 
 instance IdentityFunctor ( C: Category ) : Functor C C :=
 {
-  onObjects := λ A, A,
-  onMorphisms := λ A B f, f,
-  identities := by blast,
+  onObjects     := λ X, X,
+  onMorphisms   := λ X Y f, f,
+  identities    := by blast,
   functoriality := by blast
 }
 
 instance FunctorComposition { C D E : Category } ( F : Functor C D ) ( G : Functor D E ) : Functor C E :=
 {
-  onObjects := λ A, G (F A),
-  onMorphisms := λ A B f, G <$> (F <$> f),
-  identities := begin
-                  intros,
-                  rewrite [ - G^.identities, - F^.identities ]
-                end,
+  onObjects     := λ X, G (F X),
+  onMorphisms   := λ _ _ f, G <$> (F <$> f),
+  identities    := begin
+                     intros,
+                     rewrite [ - G^.identities, - F^.identities ]
+                   end,
   functoriality := begin
                      intros,
                      rewrite [ - G^.functoriality, - F^.functoriality ]
@@ -90,21 +110,24 @@ instance FunctorComposition { C D E : Category } ( F : Functor C D ) ( G : Funct
 
 instance DoublingAsFunctor : Functor ℕCategory ℕCategory :=
   { onObjects   := id,
-    onMorphisms := (λ A B n, n + n),
+    onMorphisms := (λ _ _ n, n + n),
+      /-
       -- Sadly, "by blast" doesn't work below if we replace "n + n"
       -- with "2 * n".  Again, I think this is because the heads don't
       -- match. If you use "n * 2", then identities works by blast,
       -- but functoriality still doesn't.
+      -/
     identities    := by blast,
     functoriality := by blast
   }
 
 structure NaturalTransformation { C D : Category } ( F G : Functor C D ) :=
-  (components: Π A : C^.Obj, D^.Hom (F A) (G A))
-  (naturality: Π { A B : C^.Obj }, Π f : C^.Hom A B, D^.compose (F <$> f) (components B) = D^.compose (components A) (G <$> f))
+  (components: Π X : C^.Obj, D^.Hom (F X) (G X))
+  (naturality: Π { X Y : C^.Obj }, Π f : C^.Hom X Y, D^.compose (F <$> f) (components Y) = D^.compose (components X) (G <$> f))
 
+-- This defines a coercion so we can write `α X` for `components α X`.
 instance NaturalTransformation_to_components { C D : Category } { F G : Functor C D } : has_coe_to_fun (NaturalTransformation F G) :=
-{ F   := λ f, Π A : C^.Obj, D^.Hom (F A) (G A),
+{ F   := λ f, Π X : C^.Obj, D^.Hom (F X) (G X),
   coe := NaturalTransformation.components }
 
 -- We'll want to be able to prove that two natural transformations are equal if they are componentwise equal.
@@ -122,16 +145,20 @@ lemma NaturalTransformations_componentwise_equal
 
 definition IdentityNaturalTransformation { C D : Category } (F : Functor C D) : NaturalTransformation F F :=
   {
-    components := λ A, D^.identity (F A),
+    components := λ X, D^.identity (F X),
     naturality := begin
                     intros,
                     rewrite [ D^.left_identity, D^.right_identity ]
                   end
   }
 
-definition vertical_composition_of_NaturalTransformations { C D : Category } { F G H : Functor C D } ( α : NaturalTransformation F G ) ( β : NaturalTransformation G H ) : NaturalTransformation F H :=
+definition vertical_composition_of_NaturalTransformations
+  { C D : Category }
+  { F G H : Functor C D }
+  ( α : NaturalTransformation F G )
+  ( β : NaturalTransformation G H ) : NaturalTransformation F H :=
   {
-    components := λ A, D^.compose (α A) (β A),
+    components := λ X, D^.compose (α X) (β X),
     naturality := begin
                     intros,
                     /- this proof was written by a sufficient stupid process that I am confident a computer
@@ -144,14 +171,29 @@ definition vertical_composition_of_NaturalTransformations { C D : Category } { F
                   end
   }
 
+definition horizontal_composition_of_NaturalTransformations
+  { C D E : Category }
+  { F G : Functor C D }
+  { H I : Functor D E } 
+  ( α : NaturalTransformation F G )
+  ( β : NaturalTransformation H I ) : NaturalTransformation (FunctorComposition F H) (FunctorComposition G I) :=
+  {
+    components := λ X : C^.Obj, E^.compose (β (F X)) (I <$> (α X)),
+    naturality := begin
+                    intros,
+                    rewrite - β^.naturality,
+                    rewrite - β^.naturality,
+                    exact sorry
+                  end
+  }
 
 instance ProductCategory (C : Category) (D : Category) :
   Category :=
   {
     Obj := C^.Obj × D^.Obj,
-    Hom := (λ a b : C^.Obj × D^.Obj, C^.Hom (a^.fst) (b^.fst) × D^.Hom (a^.snd) (b^.snd)),
-    identity := λ a, (C^.identity (a^.fst), D^.identity (a^.snd)),
-    compose  := λ a b c f g, (C^.compose (f^.fst) (g^.fst), D^.compose (f^.snd) (g^.snd)),
+    Hom := (λ X Y : C^.Obj × D^.Obj, C^.Hom (X^.fst) (Y^.fst) × D^.Hom (X^.snd) (Y^.snd)),
+    identity := λ X, (C^.identity (X^.fst), D^.identity (X^.snd)),
+    compose  := λ _ _ _ f g, (C^.compose (f^.fst) (g^.fst), D^.compose (f^.snd) (g^.snd)),
 
     left_identity  := begin
                         intros,
@@ -177,8 +219,8 @@ end ProductCategory
 
 instance ProductFunctor { A B C D : Category } ( F : Functor A B ) ( G : Functor C D ) : Functor (A × C) (B × D) :=
 {
-  onObjects := λ a, (F a^.fst, G a^.snd),
-  onMorphisms := λ a b f, (F <$> f^.fst, G <$> f^.snd),
+  onObjects := λ X, (F X^.fst, G X^.snd),
+  onMorphisms := λ _ _ f, (F <$> f^.fst, G <$> f^.snd),
   identities := begin
                   intros o,
                   induction o,
@@ -200,23 +242,23 @@ end ProductFunctor
 
 def ℕTensorProduct : Functor (ℕCategory × ℕCategory) ℕCategory :=
   { onObjects     := prod.fst,
-    onMorphisms   := λ A B n, n^.fst + n^.snd,
+    onMorphisms   := λ _ _ n, n^.fst + n^.snd,
     identities    := by blast,
     functoriality := by blast
   }
 
 instance SwitchProductCategory ( C D : Category ) : Functor (C × D) (D × C) :=
 {
-  onObjects     := λ A, (A^.snd, A^.fst),
-  onMorphisms   := λ A B f, (f^.snd, f^.fst),
+  onObjects     := λ X, (X^.snd, X^.fst),
+  onMorphisms   := λ _ _ f, (f^.snd, f^.fst),
   identities    := by blast,
   functoriality := by blast
 }
 
 instance ProductCategoryAssociator ( C D E : Category ) : Functor ((C × D) × E) (C × (D × E)) :=
 {
-  onObjects     := λ A, (A^.fst^.fst, (A^.fst^.snd, A^.snd)),
-  onMorphisms   := λ A B f, (f^.fst^.fst, (f^.fst^.snd, f^.snd)),
+  onObjects     := λ X, (X^.fst^.fst, (X^.fst^.snd, X^.snd)),
+  onMorphisms   := λ _ _ f, (f^.fst^.fst, (f^.fst^.snd, f^.snd)),
   identities    := by blast,
   functoriality := by blast
 }
@@ -231,8 +273,8 @@ structure PreMonoidalCategory
     @Functor.onMorphisms _ _ tensor (A, D) (C, F) ((compose f g), (compose h k)) = compose (@Functor.onMorphisms _ _ tensor (A, D) (B, E) (f, h)) (@Functor.onMorphisms _ _ tensor (B, E) (C, F) (g, k)))
 
 namespace PreMonoidalCategory
-  infix `⊗`:70 := λ {C : PreMonoidalCategory} (A B : C^.Obj),
-                    Functor.onObjects C^.tensor (A, B)
+  infix `⊗`:70 := λ {C : PreMonoidalCategory} (X Y : C^.Obj),
+                    Functor.onObjects C^.tensor (X, Y)
   infix `⊗m`:70 := λ {C : PreMonoidalCategory} {W X Y Z : C^.Obj}
                      (f : C^.Hom W X) (g : C^.Hom Y Z),
                      Functor.onMorphisms C^.tensor (f, g)
@@ -255,12 +297,12 @@ definition Associator ( C : PreMonoidalCategory ) :=
     (FunctorComposition (ProductCategoryAssociator C C C) (right_associated_triple_tensor C))
 
 --print Associator
-definition associator_components ( C : PreMonoidalCategory ) := Π a b c : C^.Obj, C^.Hom  (C^.tensor (C^.tensor (a, b), c)) (C^.tensor (a, C^.tensor (b, c)))
+definition associator_components ( C : PreMonoidalCategory ) := Π X Y Z : C^.Obj, C^.Hom  (C^.tensor (C^.tensor (X, Y), Z)) (C^.tensor (X, C^.tensor (Y, Z)))
 
 definition associator_to_components { C : PreMonoidalCategory } ( α : Associator C ) : associator_components C := 
 begin
  blast,
- pose r := α^.components ((a,b),c),
+ pose r := α^.components ((X, Y), Z),
  exact sorry
 end
 
@@ -277,8 +319,8 @@ definition associator_from_components { C: PreMonoidalCategory } ( α : associat
 structure LaxMonoidalCategory
   extends carrier : PreMonoidalCategory :=
   --(associator' : Associator carrier)
-  (associator : Π (A B C : Obj),
-     Hom (tensor (tensor (A, B), C)) (tensor (A, tensor (B, C)))) 
+  (associator : Π (X Y Z : Obj),
+     Hom (tensor (tensor (X, Y), Z)) (tensor (X, tensor (Y, Z)))) 
 
 -- Why can't we use notation here? It seems with slightly cleverer type checking it should work.
 -- If we really can't make this work, remove PreMonoidalCategory, as it's useless.
@@ -321,7 +363,7 @@ def ℕLaxMonoidalCategory : LaxMonoidalCategory :=
   { ℕCategory with
     tensor       := ℕTensorProduct,
     tensor_unit  := (),
-    associator   := λ A B C, Category.identity ℕCategory (),
+    associator   := λ _ _ _, Category.identity ℕCategory (),
     interchange  := begin
                       exact sorry -- should be trivial, but how?
                     end
@@ -330,8 +372,8 @@ def ℕLaxMonoidalCategory : LaxMonoidalCategory :=
 structure OplaxMonoidalCategory
   extends carrier : PreMonoidalCategory :=
   -- TODO better name? unfortunately it doesn't yet make sense to say 'inverse_associator'.
-  (backwards_associator : Π (A B C : Obj),
-     Hom (tensor (A, tensor (B, C)))  (tensor (tensor (A, B), C)))
+  (backwards_associator : Π (X Y Z : Obj),
+     Hom (tensor (X, tensor (Y, Z)))  (tensor (tensor (X, Y), Z)))
 
 attribute [class] OplaxMonoidalCategory
 attribute [instance] OplaxMonoidalCategory.to_PreMonoidalCategory
@@ -340,8 +382,8 @@ instance OplaxMonoidalCategory_coercion : has_coe OplaxMonoidalCategory PreMonoi
 
 structure MonoidalCategory
   extends LaxMonoidalCategory, OplaxMonoidalCategory :=
-  (associators_inverses_1: Π (A B C : Obj), compose (associator A B C) (backwards_associator A B C) = identity (tensor (tensor (A, B), C)))
-  (associators_inverses_2: Π (A B C : Obj), compose (backwards_associator A B C) (associator A B C) = identity (tensor (A, tensor (B, C))))
+  (associators_inverses_1: Π (X Y Z : Obj), compose (associator X Y Z) (backwards_associator X Y Z) = identity (tensor (tensor (X, Y), Z)))
+  (associators_inverses_2: Π (X Y Z : Obj), compose (backwards_associator X Y Z) (associator X Y Z) = identity (tensor (X, tensor (Y, Z))))
 
 attribute [class] MonoidalCategory
 attribute [instance] MonoidalCategory.to_LaxMonoidalCategory
@@ -349,24 +391,24 @@ instance MonoidalCategory_coercion_to_LaxMonoidalCategory : has_coe MonoidalCate
 --instance MonoidalCategory_coercion_to_OplaxMonoidalCategory : has_coe MonoidalCategory OplaxMonoidalCategory := ⟨MonoidalCategory.to_OplaxMonoidalCategory⟩
 
 namespace MonoidalCategory
-  infix `⊗`:70 := λ {C : MonoidalCategory} (A B : Obj C),
-                    tensor C (A, B)
+  infix `⊗`:70 := λ {C : MonoidalCategory} (X Y : Obj C),
+                    tensor C (X, Y)
   infix `⊗`:70 := λ {C : MonoidalCategory} {W X Y Z : Obj C}
                      (f : Hom C W X) (g : Hom C Y Z),
                      C^.tensor <$> (f, g)
 end MonoidalCategory
 
 
-definition tensor_on_left (C: MonoidalCategory) (X: C^.Obj) : Functor C C :=
+definition tensor_on_left (C: MonoidalCategory) (Z: C^.Obj) : Functor C C :=
   {
-    onObjects := λ A, X ⊗ A,
-    onMorphisms := --λ A B f, (C^.identity X) ⊗ f,
-                   --λ A B f, C^.tensor <$> (C^.identity X, f),
-                   --λ A B f, onMorphisms (C^.tensor) (C^.identity X f),
-                   λ A B f, @Functor.onMorphisms _ _ (C^.tensor) (X, A) (X, B) (C^.identity X, f),
+    onObjects := λ X, Z ⊗ X,
+    onMorphisms := --λ _ _ f, (C^.identity Z) ⊗ f,
+                   --λ _ _ f, C^.tensor <$> (C^.identity Z, f),
+                   --λ _ _ f, onMorphisms (C^.tensor) (C^.identity Z f),
+                   λ X Y f, @Functor.onMorphisms _ _ (C^.tensor) (Z, X) (Z, Y) (C^.identity Z, f),
     identities := begin
                     intros,
-                    pose H := Functor.identities (C^.tensor) (X, A),
+                    pose H := Functor.identities (C^.tensor) (Z, X),
                     -- these next two steps are ridiculous... surely we shouldn't have to do this.
                     assert ids : Category.identity C = MonoidalCategory.identity C, blast,
                     rewrite ids,
@@ -382,13 +424,13 @@ definition tensor_on_left (C: MonoidalCategory) (X: C^.Obj) : Functor C C :=
                      end
   }
 
-structure Isomorphism ( C: Category ) ( A B : C^.Obj ) :=
-  (morphism : C^.Hom A B)
-  (inverse : C^.Hom B A)
-  (witness_1 : C^.compose morphism inverse = C^.identity A)
-  (witness_2 : C^.compose inverse morphism = C^.identity B)
+structure Isomorphism ( C: Category ) ( X Y : C^.Obj ) :=
+  (morphism : C^.Hom X Y)
+  (inverse : C^.Hom Y X)
+  (witness_1 : C^.compose morphism inverse = C^.identity X)
+  (witness_2 : C^.compose inverse morphism = C^.identity Y)
 
-instance Isomorphism_coercion_to_morphism { C : Category } { A B : C^.Obj } : has_coe (Isomorphism C A B) (C^.Hom A B) :=
+instance Isomorphism_coercion_to_morphism { C : Category } { X Y : C^.Obj } : has_coe (Isomorphism C X Y) (C^.Hom X Y) :=
   { coe := Isomorphism.morphism }
 
 -- To define a natural isomorphism, we'll define the functor category, and ask for an isomorphism there.
@@ -426,7 +468,7 @@ structure EnrichedCategory :=
   (V: MonoidalCategory)
   (Obj : Type )
   (Hom : Obj -> Obj -> V^.Obj)
-  (compose :  Π ⦃A B C : Obj⦄, V^.Hom ((Hom A B) ⊗ (Hom B C)) (Hom A C))
+  (compose :  Π ⦃X Y Z : Obj⦄, V^.Hom ((Hom X Y) ⊗ (Hom Y Z)) (Hom X Z))
   -- TODO and so on
 
 -- TODO How would we define an additive category, now? We don't want to say:
