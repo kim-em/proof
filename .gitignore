@@ -6,6 +6,8 @@
 *.agdai
 *.agda#
 *.clean
+*.olean
 tutorials
-*/#*.lean#
+**/#*.lean#
+.#*.lean
 scratch.lean
