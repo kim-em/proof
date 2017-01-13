@@ -85,17 +85,16 @@ instance FunctorCategory ( C D : Category ) : Category :=
   Hom := λ F G, NaturalTransformation F G,
 
   identity := λ F, IdentityNaturalTransformation F,
-  compose := @vertical_composition_of_NaturalTransformations C D,
+  compose  := @vertical_composition_of_NaturalTransformations C D,
 
-  left_identity := sorry, -- these facts all rely on NaturalTransformations_componentwise_equal above.
+  left_identity  := sorry, -- these facts all rely on NaturalTransformations_componentwise_equal above.
   right_identity := sorry,
-  associativity := sorry
+  associativity  := sorry
 }
 
-definition NaturalIsomorphism { C D : Category } ( F G : Functor C D ) := Isomorphism (tqft.categories.functor.FunctorCategory C D) F G
+definition NaturalIsomorphism { C D : Category } ( F G : Functor C D ) := Isomorphism (FunctorCategory C D) F G
 
 -- TODO I'm confused how to even say this!
 --lemma components_of_NaturalIsomorphism_are_isomorphisms { C D : Category } { F G : Functor C D } ( α : NaturalIsomorphism F G ) ....?
-
 
 end tqft.categories.natural_transformation
