@@ -34,13 +34,6 @@ lemma NaturalTransformations_componentwise_equal
   | NaturalTransformation.mk β_components β_naturality :=
   have α_components = β_components, from funext w,
   by trivial
-  --begin
-  --  induction α with α_components α_naturality,
-  --  induction β with β_components β_naturality,
-  --  apply (funext w)
-  --  -- Argh, how to complete this proof?
-  --  --exact sorry
-  --end
 
 definition IdentityNaturalTransformation { C D : Category } (F : Functor C D) : NaturalTransformation F F :=
   {
