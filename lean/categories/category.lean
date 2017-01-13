@@ -2,6 +2,8 @@
 -- Released under Apache 2.0 license as described in the file LICENSE.
 -- Authors: Stephen Morgan, Scott Morrison
 
+import standard
+
 -- Lean's SMT tactic isn't yet hooked up by default. This snippet makes 'blast' available as an all purpose tactic.
 meta def blast : tactic unit := using_smt $ return ()
 
@@ -24,7 +26,7 @@ structure Category :=
   (associativity  : Π ⦃W X Y Z : Obj⦄ (f : Hom W X) (g : Hom X Y) (h : Hom Y Z),
     compose (compose f g) h = compose f (compose g h))
 
-attribute [class] Category
+-- attribute [class] Category
 /-
 -- Unfortunately declaring Category as a class when it is first declared results
 -- in an unexpected type signature; this is a feature, not a bug, as Stephen discovered

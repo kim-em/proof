@@ -17,11 +17,9 @@ structure Functor (C : Category) (D : Category) :=
   (functoriality : Π ⦃X Y Z : C^.Obj⦄ (f : C^.Hom X Y) (g : C^.Hom Y Z),
     onMorphisms (C^.compose f g) = D^.compose (onMorphisms f) (onMorphisms g))
 
-attribute [class] Functor
-
 -- We define a coercion so that we can write `F X` for the functor `F` applied to the object `X`.
 -- One can still write out `onObjects F X` when needed.
-instance Functor_to_onObjects { C D : Category }: has_coe_to_fun (Functor C D) :=
+instance  Functor_to_onObjects { C D : Category }: has_coe_to_fun (Functor C D) :=
 { F   := λ f, C^.Obj -> D^.Obj,
   coe := Functor.onObjects }
 
@@ -42,7 +40,7 @@ end Functor
 --{ F   := λ f, Π ⦃X Y : C^.Obj⦄, C^.Hom X Y → D^.Hom (f X) (f Y), -- contrary to usual use, `f` here denotes the Functor.
 --  coe := Functor.onMorphisms }
 
-instance IdentityFunctor ( C: Category ) : Functor C C :=
+definition IdentityFunctor ( C: Category ) : Functor C C :=
 {
   onObjects     := λ X, X,
   onMorphisms   := λ X Y f, f,
@@ -50,7 +48,7 @@ instance IdentityFunctor ( C: Category ) : Functor C C :=
   functoriality := by blast
 }
 
-instance FunctorComposition { C D E : Category } ( F : Functor C D ) ( G : Functor D E ) : Functor C E :=
+definition FunctorComposition { C D E : Category } ( F : Functor C D ) ( G : Functor D E ) : Functor C E :=
 {
   onObjects     := λ X, G (F X),
   onMorphisms   := λ _ _ f, G <$> (F <$> f),

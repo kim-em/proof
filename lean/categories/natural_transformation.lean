@@ -65,7 +65,7 @@ definition horizontal_composition_of_NaturalTransformations
   { F G : Functor C D }
   { H I : Functor D E } 
   ( α : NaturalTransformation F G )
-  ( β : NaturalTransformation H I ) : NaturalTransformation (tqft.categories.functor.FunctorComposition F H) (tqft.categories.functor.FunctorComposition G I) :=
+  ( β : NaturalTransformation H I ) : NaturalTransformation (FunctorComposition F H) (FunctorComposition G I) :=
   {
     components := λ X : C^.Obj, E^.compose (β (F X)) (I <$> (α X)),
     naturality := begin
@@ -79,7 +79,7 @@ definition horizontal_composition_of_NaturalTransformations
 -- To define a natural isomorphism, we'll define the functor category, and ask for an isomorphism there.
 -- It's then a lemma that each component is an isomorphism, and vice versa.
 
-instance FunctorCategory ( C D : Category ) : Category :=
+definition FunctorCategory ( C D : Category ) : Category :=
 {
   Obj := Functor C D,
   Hom := λ F G, NaturalTransformation F G,

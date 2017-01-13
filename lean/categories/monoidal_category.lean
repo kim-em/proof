@@ -7,6 +7,11 @@ import .functor
 import .natural_transformation
 import .products
 
+open tqft.categories
+open tqft.categories.functor
+open tqft.categories.natural_transformation
+open tqft.categories.products
+
 namespace tqft.categories.monoidal_category
 
 structure PreMonoidalCategory
@@ -28,7 +33,7 @@ end PreMonoidalCategory
 
 
 attribute [class] PreMonoidalCategory
-attribute [instance] PreMonoidalCategory.to_Category
+--attribute [instance] PreMonoidalCategory.to_Category
 instance PreMonoidalCategory_coercion : has_coe PreMonoidalCategory Category := 
   ⟨PreMonoidalCategory.to_Category⟩
 
@@ -42,7 +47,6 @@ definition Associator ( C : PreMonoidalCategory ) :=
     (left_associated_triple_tensor C) 
     (FunctorComposition (ProductCategoryAssociator C C C) (right_associated_triple_tensor C))
 
---print Associator
 definition associator_components ( C : PreMonoidalCategory ) := Π X Y Z : C^.Obj, C^.Hom  (C^.tensor (C^.tensor (X, Y), Z)) (C^.tensor (X, C^.tensor (Y, Z)))
 
 definition associator_to_components { C : PreMonoidalCategory } ( α : Associator C ) : associator_components C := 

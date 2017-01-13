@@ -8,9 +8,14 @@ import ..natural_transformation
 import ..products
 import ..monoidal_category
 
+open tqft.categories
+open tqft.categories.functor
+open tqft.categories.products
+open tqft.categories.monoidal_category
+
 namespace tqft.categories.examples.naturals
 
-instance ℕCategory : Category :=
+definition ℕCategory : Category :=
   {
     Obj := unit,
     Hom := λ _ _, ℕ,
@@ -26,7 +31,7 @@ instance ℕCategory : Category :=
     associativity  := by blast  --λ a b c d, add_assoc
   }    
 
-instance DoublingAsFunctor : Functor ℕCategory ℕCategory :=
+definition DoublingAsFunctor : Functor ℕCategory ℕCategory :=
   { onObjects   := id,
     onMorphisms := (λ _ _ n, n + n),
       /-
@@ -39,14 +44,14 @@ instance DoublingAsFunctor : Functor ℕCategory ℕCategory :=
     functoriality := by blast
   }
 
-def ℕTensorProduct : Functor (ℕCategory × ℕCategory) ℕCategory :=
+definition ℕTensorProduct : Functor (ℕCategory × ℕCategory) ℕCategory :=
   { onObjects     := prod.fst,
     onMorphisms   := λ _ _ n, n^.fst + n^.snd,
     identities    := by blast,
     functoriality := by blast
   }
 
-def ℕLaxMonoidalCategory : LaxMonoidalCategory :=
+definition ℕLaxMonoidalCategory : LaxMonoidalCategory :=
   { ℕCategory with
     tensor       := ℕTensorProduct,
     tensor_unit  := (),
