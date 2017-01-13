@@ -33,6 +33,13 @@ attribute [class] Category
 -- We just declare things as structures, and then add the class attribute afterwards.
 -/
 
+-- Ugh. notation is a reserved word.
+namespace notations
+  infixr `∘`     := Category.compose _ 
+  infixl `⟶` :25 := Category.Hom _ 
+end notations
+
+
 structure Isomorphism ( C: Category ) ( X Y : C^.Obj ) :=
   (morphism : C^.Hom X Y)
   (inverse : C^.Hom Y X)
