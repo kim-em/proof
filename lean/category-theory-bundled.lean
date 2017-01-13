@@ -54,7 +54,7 @@ instance ℕCategory : Category :=
       -- not left_identity.
     right_identity := by blast, --λ a b, add_zero,
     associativity  := by blast  --λ a b c d, add_assoc
-  }
+  }    
 
 structure Functor (C : Category) (D : Category) :=
   (onObjects   : C^.Obj → D^.Obj)

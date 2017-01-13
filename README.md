@@ -7,3 +7,5 @@ Mostly, it consists of Scott Morrison and Stephen Morgan tinkering with Lean,
 trying to understand just how hard it is to write real mathematics!
 
 You may find useful the [Getting started guide](getting-started.md).
+
+Everything is available under the Apache 2.0 license, as detailed in LICENSE.
