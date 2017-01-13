@@ -16,7 +16,7 @@ meta def blast : tactic unit := using_smt $ return ()
 
 /-
 -- We've decided that Obj and Hom should be fields of Category, rather than parameters.
--- Mostly this is for the sake of simpler signatures, and it's possible that it is not the right choice.
+-- Mostly this is for the sake of simpler signatures, but it's possible that it is not the right choice.
 -- Functor and NaturalTransformation are each parameterized by both their source and target.
 -/
 
@@ -32,18 +32,22 @@ structure Category :=
     compose (compose f g) h = compose f (compose g h))
 
 attribute [class] Category
--- declaring it as a class from the beginning results in an insane
--- signature ... This really seems like it must be a bug, or at least
--- a rough edge.
+/-
+-- Unfortunately declaring Category as a class when it is first declared results
+-- in an unexpected type signature; this is a feature, not a bug, as Stephen discovered
+-- and explained at https://github.com/semorrison/proof/commit/e727197e794647d1148a1b8b920e7e567fb9079f
+--
+-- We just declare things as structures, and then add the class attribute afterwards.
+-/
 
 instance ℕCategory : Category :=
   {
     Obj := unit,
-    Hom := λ a b, ℕ,
-    identity := λ a, 0,
-    compose  := λ a b c, add,
+    Hom := λ _ _, ℕ,
+    identity := λ _, 0,
+    compose  := λ _ _ _, add,
 
-    left_identity  := λ a b, zero_add,
+    left_identity  := λ _ _, zero_add,
       -- Sadly, "by blast" doesn't work here. I think this is because
       -- "by blast" checks if the heads of the expressions match,
       -- which is the case for right_identity and associativity, but
@@ -183,15 +187,15 @@ definition horizontal_composition_of_NaturalTransformations
                     intros,
                     rewrite - β^.naturality,
                     rewrite - β^.naturality,
-                    exact sorry
+                    exact sorry -- I'm stuck here, as I don't know how to apply the definition of FunctorComposition.onMorphisms
                   end
   }
 
 instance ProductCategory (C : Category) (D : Category) :
   Category :=
   {
-    Obj := C^.Obj × D^.Obj,
-    Hom := (λ X Y : C^.Obj × D^.Obj, C^.Hom (X^.fst) (Y^.fst) × D^.Hom (X^.snd) (Y^.snd)),
+    Obj      := C^.Obj × D^.Obj,
+    Hom      := (λ X Y : C^.Obj × D^.Obj, C^.Hom (X^.fst) (Y^.fst) × D^.Hom (X^.snd) (Y^.snd)),
     identity := λ X, (C^.identity (X^.fst), D^.identity (X^.snd)),
     compose  := λ _ _ _ f g, (C^.compose (f^.fst) (g^.fst), D^.compose (f^.snd) (g^.snd)),
 
