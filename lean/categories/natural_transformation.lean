@@ -32,7 +32,7 @@ lemma NaturalTransformations_componentwise_equal
     induction α with αc,
     induction β with βc,
     have hc : αc = βc, from funext w,
-    by blast
+    by subst hc
   end
 
 definition IdentityNaturalTransformation { C D : Category } (F : Functor C D) : NaturalTransformation F F :=
