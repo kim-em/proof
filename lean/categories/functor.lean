@@ -48,14 +48,8 @@ instance IdentityFunctor ( C: Category ) : Functor C C :=
 {
   onObjects     := id,
   onMorphisms   := λ _ _ f, f,
-  identities    := begin
-                   intro,
-                   refl
-                   end,
-  functoriality := begin
-                   intros,
-                   refl
-                   end
+  identities    := λ _, rfl,
+  functoriality := λ _ _ _ _ _, rfl
 }
 
 instance FunctorComposition { C D E : Category } ( F : Functor C D ) ( G : Functor D E ) : Functor C E :=
