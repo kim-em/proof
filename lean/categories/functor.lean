@@ -12,9 +12,9 @@ structure Functor (C : Category) (D : Category) :=
   (onObjects   : C^.Obj → D^.Obj)
   (onMorphisms : Π ⦃X Y : C^.Obj⦄,
                 C^.Hom X Y → D^.Hom (onObjects X) (onObjects Y))
-  (identities : Π (X : C^.Obj),
+  (identities : ∀ (X : C^.Obj),
     onMorphisms (C^.identity X) = D^.identity (onObjects X))
-  (functoriality : Π ⦃X Y Z : C^.Obj⦄ (f : C^.Hom X Y) (g : C^.Hom Y Z),
+  (functoriality : ∀ ⦃X Y Z : C^.Obj⦄ (f : C^.Hom X Y) (g : C^.Hom Y Z),
     onMorphisms (C^.compose f g) = D^.compose (onMorphisms f) (onMorphisms g))
 
 attribute [class] Functor

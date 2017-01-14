@@ -19,9 +19,9 @@ structure Category :=
   (identity : Π X : Obj, Hom X X)
   (compose  : Π ⦃X Y Z : Obj⦄, Hom X Y → Hom Y Z → Hom X Z)
 
-  (left_identity  : Π ⦃X Y : Obj⦄ (f : Hom X Y), compose (identity _) f = f)
-  (right_identity : Π ⦃X Y : Obj⦄ (f : Hom X Y), compose f (identity _) = f)
-  (associativity  : Π ⦃W X Y Z : Obj⦄ (f : Hom W X) (g : Hom X Y) (h : Hom Y Z),
+  (left_identity  : ∀ ⦃X Y : Obj⦄ (f : Hom X Y), compose (identity _) f = f)
+  (right_identity : ∀ ⦃X Y : Obj⦄ (f : Hom X Y), compose f (identity _) = f)
+  (associativity  : ∀ ⦃W X Y Z : Obj⦄ (f : Hom W X) (g : Hom X Y) (h : Hom Y Z),
     compose (compose f g) h = compose f (compose g h))
 
 attribute [class] Category
