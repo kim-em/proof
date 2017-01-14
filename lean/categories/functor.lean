@@ -46,10 +46,16 @@ open notations
 
 instance IdentityFunctor ( C: Category ) : Functor C C :=
 {
-  onObjects     := λ X, X,
-  onMorphisms   := λ X Y f, f,
-  identities    := by blast,
-  functoriality := by blast
+  onObjects     := id,
+  onMorphisms   := λ _ _ f, f,
+  identities    := begin
+                   intro,
+                   refl
+                   end,
+  functoriality := begin
+                   intros,
+                   refl
+                   end
 }
 
 instance FunctorComposition { C D E : Category } ( F : Functor C D ) ( G : Functor D E ) : Functor C E :=
