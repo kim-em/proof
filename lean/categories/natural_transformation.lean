@@ -28,12 +28,12 @@ lemma NaturalTransformations_componentwise_equal
   { F G : Functor C D } 
   ( α β : NaturalTransformation F G )
   ( w : ∀ X : C^.Obj, α X = β X ) : α = β :=
-  match α with
-  | NaturalTransformation.mk α_components α_naturality :=
-  match β with
-  | NaturalTransformation.mk β_components β_naturality :=
-  have α_components = β_components, from funext w,
-  by trivial
+  begin
+    induction α with αc,
+    induction β with βc,
+    have hc : αc = βc, from funext w,
+    by blast
+  end
 
 definition IdentityNaturalTransformation { C D : Category } (F : Functor C D) : NaturalTransformation F F :=
   {
