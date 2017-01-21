@@ -6,9 +6,14 @@ import .category
 import .functor
 import .natural_transformation
 
-namespace tqft.categories
+open tqft.categories
+open tqft.categories.notations
+open tqft.categories.functor
+open tqft.categories.functor.notations
 
-instance ProductCategory (C : Category) (D : Category) :
+namespace tqft.categories.products
+
+definition ProductCategory (C : Category) (D : Category) :
   Category :=
   {
     Obj      := C^.Obj × D^.Obj,
@@ -38,7 +43,7 @@ namespace ProductCategory
   notation C `×` D := ProductCategory C D
 end ProductCategory
 
-instance ProductFunctor { A B C D : Category } ( F : Functor A B ) ( G : Functor C D ) : Functor (A × C) (B × D) :=
+definition ProductFunctor { A B C D : Category } ( F : Functor A B ) ( G : Functor C D ) : Functor (A × C) (B × D) :=
 {
   onObjects := λ X, (F X^.fst, G X^.snd),
   onMorphisms := λ _ _ f, (F <$> f^.fst, G <$> f^.snd),
@@ -55,21 +60,19 @@ instance ProductFunctor { A B C D : Category } ( F : Functor A B ) ( G : Functor
                    end
 }
 
-check ProductFunctor
-
 namespace ProductFunctor
   notation F `×` G := ProductFunctor F G
 end ProductFunctor
 
-instance SwitchProductCategory ( C D : Category ) : Functor (C × D) (D × C) :=
+definition SwitchProductCategory ( C D : Category ) : Functor (C × D) (D × C) :=
 {
   onObjects     := λ X, (X^.snd, X^.fst),
   onMorphisms   := λ _ _ f, (f^.snd, f^.fst),
-  identities    := by blast,
+  identities    := by blast, -- I thought these used to work by blast
   functoriality := by blast
 }
 
-instance ProductCategoryAssociator ( C D E : Category ) : Functor ((C × D) × E) (C × (D × E)) :=
+definition ProductCategoryAssociator ( C D E : Category ) : Functor ((C × D) × E) (C × (D × E)) :=
 {
   onObjects     := λ X, (X^.fst^.fst, (X^.fst^.snd, X^.snd)),
   onMorphisms   := λ _ _ f, (f^.fst^.fst, (f^.fst^.snd, f^.snd)),
@@ -77,5 +80,5 @@ instance ProductCategoryAssociator ( C D E : Category ) : Functor ((C × D) × E
   functoriality := by blast
 }
 
-end tqft.categories
+end tqft.categories.products
 

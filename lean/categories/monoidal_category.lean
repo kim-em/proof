@@ -7,6 +7,13 @@ import .functor
 import .natural_transformation
 import .products
 
+open tqft.categories
+open tqft.categories.notations
+open tqft.categories.functor
+open tqft.categories.functor.notations
+open tqft.categories.products
+open tqft.categories.natural_transformation
+
 namespace tqft.categories.monoidal_category
 
 structure PreMonoidalCategory

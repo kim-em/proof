@@ -82,7 +82,7 @@ definition horizontal_composition_of_NaturalTransformations
 -- To define a natural isomorphism, we'll define the functor category, and ask for an isomorphism there.
 -- It's then a lemma that each component is an isomorphism, and vice versa.
 
-instance FunctorCategory ( C D : Category ) : Category :=
+definition FunctorCategory ( C D : Category ) : Category :=
 {
   Obj := Functor C D,
   Hom := λ F G, NaturalTransformation F G,
@@ -90,7 +90,9 @@ instance FunctorCategory ( C D : Category ) : Category :=
   identity := λ F, IdentityNaturalTransformation F,
   compose  := @vertical_composition_of_NaturalTransformations C D,
 
-  left_identity  := sorry, -- these facts all rely on NaturalTransformations_componentwise_equal above.
+  left_identity  := begin
+                     exact sorry, -- these facts all rely on NaturalTransformations_componentwise_equal above.
+                    end, 
   right_identity := sorry,
   associativity  := sorry
 }

@@ -10,6 +10,12 @@ import ..monoidal_category
 
 namespace tqft.categories.examples.naturals
 
+open tqft.categories
+open tqft.categories.notations
+open tqft.categories.functor
+open tqft.categories.functor.notations
+open tqft.categories.monoidal_category
+
 instance ℕCategory : Category :=
   {
     Obj := unit,
@@ -51,9 +57,7 @@ def ℕLaxMonoidalCategory : LaxMonoidalCategory :=
     tensor       := ℕTensorProduct,
     tensor_unit  := (),
     associator   := λ _ _ _, Category.identity ℕCategory (),
-    interchange  := begin
-                      exact sorry -- should be trivial, but how?
-                    end
+    interchange  := sorry -- should be trivial, but how?
   }
 
 end tqft.categories.examples.naturals
