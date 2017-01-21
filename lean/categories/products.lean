@@ -6,6 +6,11 @@ import .category
 import .functor
 import .natural_transformation
 
+open tqft.categories
+open tqft.categories.notations
+open tqft.categories.functor
+open tqft.categories.functor.notations
+
 namespace tqft.categories.products
 
 definition ProductCategory (C : Category) (D : Category) :
@@ -63,16 +68,16 @@ definition SwitchProductCategory ( C D : Category ) : Functor (C × D) (D × C) 
 {
   onObjects     := λ X, (X^.snd, X^.fst),
   onMorphisms   := λ _ _ f, (f^.snd, f^.fst),
-  identities    := by blast,
-  functoriality := by blast
+  identities    := sorry, -- I thought these used to work by blast
+  functoriality := sorry
 }
 
 definition ProductCategoryAssociator ( C D E : Category ) : Functor ((C × D) × E) (C × (D × E)) :=
 {
   onObjects     := λ X, (X^.fst^.fst, (X^.fst^.snd, X^.snd)),
   onMorphisms   := λ _ _ f, (f^.fst^.fst, (f^.fst^.snd, f^.snd)),
-  identities    := by blast,
-  functoriality := by blast
+  identities    := sorry,
+  functoriality := sorry
 }
 
 end tqft.categories.products
