@@ -2,6 +2,9 @@
 -- Released under Apache 2.0 license as described in the file LICENSE.
 -- Authors: Stephen Morgan, Scott Morrison
 
+-- Lean's SMT tactic isn't yet hooked up by default. This snippet makes 'blast' available as an all purpose tactic.
+meta def blast : tactic unit := using_smt $ return ()
+
 /-
 -- We've decided that Obj and Hom should be fields of Category, rather than parameters.
 -- Mostly this is for the sake of simpler signatures, but it's possible that it is not the right choice.
@@ -9,10 +12,6 @@
 -/
 
 namespace tqft.categories
-
--- Lean's SMT tactic isn't yet hooked up by default. This snippet makes 'blast' available as an all purpose tactic.
-meta def blast : tactic unit := using_smt $ return ()
-
 
 structure Category :=
   (Obj : Type)

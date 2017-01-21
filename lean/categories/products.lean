@@ -68,16 +68,16 @@ definition SwitchProductCategory ( C D : Category ) : Functor (C × D) (D × C) 
 {
   onObjects     := λ X, (X^.snd, X^.fst),
   onMorphisms   := λ _ _ f, (f^.snd, f^.fst),
-  identities    := sorry, -- I thought these used to work by blast
-  functoriality := sorry
+  identities    := by blast, -- I thought these used to work by blast
+  functoriality := by blast
 }
 
 definition ProductCategoryAssociator ( C D E : Category ) : Functor ((C × D) × E) (C × (D × E)) :=
 {
   onObjects     := λ X, (X^.fst^.fst, (X^.fst^.snd, X^.snd)),
   onMorphisms   := λ _ _ f, (f^.fst^.fst, (f^.fst^.snd, f^.snd)),
-  identities    := sorry,
-  functoriality := sorry
+  identities    := by blast,
+  functoriality := by blast
 }
 
 end tqft.categories.products
