@@ -15,7 +15,7 @@ namespace tqft.categories.natural_transformation
 structure NaturalTransformation { C D : Category } ( F G : Functor C D ) :=
   (components: Π X : C^.Obj, D^.Hom (F X) (G X))
   (naturality: ∀ { X Y : C^.Obj } (f : C^.Hom X Y),
-     (F <$> f) ∘ components Y = components X ∘ (G <$> f))
+     (F^.onMorphisms f) ∘ components Y = components X ∘ (G^.onMorphisms f))
 
 -- This defines a coercion so we can write `α X` for `components α X`.
 instance NaturalTransformation_to_components { C D : Category } { F G : Functor C D } : has_coe_to_fun (NaturalTransformation F G) :=
@@ -72,12 +72,12 @@ definition horizontal_composition_of_NaturalTransformations
   ( α : NaturalTransformation F G )
   ( β : NaturalTransformation H I ) : NaturalTransformation (tqft.categories.functor.FunctorComposition F H) (tqft.categories.functor.FunctorComposition G I) :=
   {
-    components := λ X : C^.Obj, E^.compose (β (F X)) (I <$> (α X)),
+    components := λ X : C^.Obj, E^.compose (β (F X)) (I^.onMorphisms (α X)),
     naturality := begin
                     intros,
                     rewrite - β^.naturality,
                     rewrite - β^.naturality,
-                    rewrite Functor.FunctorComposition_onMorphisms,
+                    rewrite FunctorComposition_onMorphisms,
                     exact sorry -- I'm stuck here, as I don't know how to apply the definition of FunctorComposition.onMorphisms
                   end
   }
