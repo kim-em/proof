@@ -23,10 +23,11 @@ instance Functor_to_onObjects { C D : Category }: has_coe_to_fun (Functor C D) :
 { F   := λ f, C^.Obj -> D^.Obj,
   coe := Functor.onObjects }
 
+/-
 -- Unfortunately we haven't been able to set up similar notation for morphisms.
 -- Instead we define notation so that `F <$> f` denotes the functor `F` applied to the morphism `f`.
 -- One can still write out `onMorphisms F f` when needed, or even the very verbose `@Functor.onMorphisms C D F X Y f`.
-namespace notations
+--namespace notations
   -- Lean complains about the use of local variables in
   -- notation. There must be a way around that.
   infix `<$>` :50 := λ {C : Category} {D : Category}
@@ -35,6 +36,7 @@ namespace notations
 end notations
 
 open notations
+-/
 
 -- This defines a coercion allowing us to write `F f` for `onMorphisms F f`
 -- but sadly it doesn't work if to_onObjects is already in scope.
@@ -53,7 +55,7 @@ definition IdentityFunctor ( C: Category ) : Functor C C :=
 definition FunctorComposition { C D E : Category } ( F : Functor C D ) ( G : Functor D E ) : Functor C E :=
 {
   onObjects     := λ X, G (F X),
-  onMorphisms   := λ _ _ f, G <$> (F <$> f),
+  onMorphisms   := λ _ _ f, G^.onMorphisms (F^.onMorphisms f),
   identities    := begin
                      intros,
                      rewrite [ - G^.identities, - F^.identities ]

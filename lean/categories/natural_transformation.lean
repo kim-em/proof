@@ -6,16 +6,14 @@ import .category
 import .functor
 
 open tqft.categories
-open tqft.categories.notations
 open tqft.categories.functor
-open tqft.categories.functor.notations
 
 namespace tqft.categories.natural_transformation
 
 structure NaturalTransformation { C D : Category } ( F G : Functor C D ) :=
   (components: Π X : C^.Obj, D^.Hom (F X) (G X))
   (naturality: ∀ { X Y : C^.Obj } (f : C^.Hom X Y),
-     (F^.onMorphisms f) ∘ components Y = components X ∘ (G^.onMorphisms f))
+     D^.compose (F^.onMorphisms f) (components Y) = D^.compose (components X) (G^.onMorphisms f))
 
 -- This defines a coercion so we can write `α X` for `components α X`.
 instance NaturalTransformation_to_components { C D : Category } { F G : Functor C D } : has_coe_to_fun (NaturalTransformation F G) :=
@@ -63,9 +61,7 @@ definition vertical_composition_of_NaturalTransformations
                   end
   }
 
-lemma FunctorComposition_onMorphisms { B C D : Category}
-
-definition horizontal_composition_of_NaturalTransformations
+definition horizontal_composition_of_NaturalTransformations 
   { C D E : Category }
   { F G : Functor C D }
   { H I : Functor D E } 
@@ -78,7 +74,11 @@ definition horizontal_composition_of_NaturalTransformations
                     rewrite - β^.naturality,
                     rewrite - β^.naturality,
                     rewrite FunctorComposition_onMorphisms,
-                    exact sorry -- I'm stuck here, as I don't know how to apply the definition of FunctorComposition.onMorphisms
+                    rewrite FunctorComposition_onMorphisms, 
+                    -- I'm stuck for now. It seems either of the next two tactics should apply, but both give errors.
+                    -- rewrite E^.associativity,
+                    -- rewrite - E^.associativity,
+                    exact sorry
                   end
   }
 
@@ -102,11 +102,14 @@ definition FunctorCategory ( C D : Category ) : Category :=
 
 definition NaturalIsomorphism { C D : Category } ( F G : Functor C D ) := Isomorphism (FunctorCategory C D) F G
 
--- It's a pity we need to separately define this coercion. Somehow we want the definition above to be more transparent?
+-- It's a pity we need to separately define this coercion. Somehow we
+-- want the definition above to be more transparent?
 instance NaturalIsomorphism_coercion_to_NaturalTransformation { C D : Category } { F G : Functor C D } : has_coe (NaturalIsomorphism F G) (NaturalTransformation F G) :=
   { coe := Isomorphism.morphism }
 
--- TODO I'm confused how to even say this!
-lemma components_of_NaturalIsomorphism_are_isomorphisms { C D : Category } { F G : Functor C D } ( α : NaturalIsomorphism F G ) ....?
+-- How do we refer to the components of a NaturalIsomorphism? Below
+-- doesn't work.
+lemma components_of_NaturalIsomorphism_are_isomorphisms { C D : Category } { F G : Functor C D } { α : NaturalIsomorphism F G } { X : C^.Obj } :
+  Inverse (α^.components X) := sorry
 
 end tqft.categories.natural_transformation
