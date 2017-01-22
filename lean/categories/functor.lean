@@ -64,4 +64,7 @@ definition FunctorComposition { C D E : Category } ( F : Functor C D ) ( G : Fun
                    end
 }
 
+lemma FunctorComposition_onMorphisms { C D E : Category } { F : Functor C D } { G : Functor D E } { X Y : C^.Obj } { f : C^.Hom X Y } :
+  (FunctorComposition F G)^.onMorphisms f = G^.onMorphisms (F^.onMorphisms f) := by blast
+
 end tqft.categories.functor

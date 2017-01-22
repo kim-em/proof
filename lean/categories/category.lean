@@ -35,8 +35,8 @@ attribute [class] Category
 
 -- Ugh. notation is a reserved word.
 namespace notations
-  infixr `∘`     := Category.compose _ 
-  infixl `⟶` :25 := Category.Hom _ 
+--  infixr `∘`     := Category.compose _ 
+--  infixl `⟶` :25 := Category.Hom _ 
 end notations
 
 open notations

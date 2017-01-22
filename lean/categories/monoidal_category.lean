@@ -54,8 +54,6 @@ definition associator_components ( C : PreMonoidalCategory ) := Π X Y Z : C^.Ob
 
 definition associator_to_components { C : PreMonoidalCategory } ( α : Associator C ) : associator_components C := 
 begin
- blast,
- pose r := α^.components ((X, Y), Z),
  exact sorry
 end
 
@@ -96,7 +94,7 @@ structure LaxMonoidalCategory
   )
 -/
 /-
--- TODO(far future)
+-- TODO (far future)
 -- One should prove the first substantial result of this theory: that any two ways to reparenthesize are equal.
 -- It requires introducing a representation of a reparathesization, but the proof should then be an easy induction.
 -- It's a good example of something that is so easy for humans, that is better eventually be easy for the computer too!
