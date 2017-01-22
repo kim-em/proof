@@ -85,6 +85,20 @@ definition horizontal_composition_of_NaturalTransformations
 -- To define a natural isomorphism, we'll define the functor category, and ask for an isomorphism there.
 -- It's then a lemma that each component is an isomorphism, and vice versa.
 
+lemma vertical_composition_of_NaturalTransformations_components 
+  { C D : Category }
+  { F G H : Functor C D }
+  { α : NaturalTransformation F G }
+  { β : NaturalTransformation G H }
+  { X : C^.Obj } :
+  (vertical_composition_of_NaturalTransformations α β)^.components X = D^.compose (α^.components X) (β^.components X) := by blast
+
+lemma IdentityNaturalTransformation_components
+  { C D : Category }
+  { F : Functor C D }
+  { X : C^.Obj } :
+  (IdentityNaturalTransformation F)^.components X = D^.identity (F X) := by blast
+
 definition FunctorCategory ( C D : Category ) : Category :=
 {
   Obj := Functor C D,
@@ -94,7 +108,13 @@ definition FunctorCategory ( C D : Category ) : Category :=
   compose  := @vertical_composition_of_NaturalTransformations C D,
 
   left_identity  := begin
-                     exact sorry, -- these facts all rely on NaturalTransformations_componentwise_equal above.
+                     intros F G f,
+                     apply NaturalTransformations_componentwise_equal,
+                     intros, 
+                     blast, -- what is blast actually doing here? it's helpful, but only for a little step.
+                     rewrite vertical_composition_of_NaturalTransformations_components,
+                     rewrite IdentityNaturalTransformation_components,
+                     rewrite D^.left_identity
                     end, 
   right_identity := sorry,
   associativity  := sorry
@@ -109,7 +129,9 @@ instance NaturalIsomorphism_coercion_to_NaturalTransformation { C D : Category }
 
 -- How do we refer to the components of a NaturalIsomorphism? Below
 -- doesn't work.
+/-
 lemma components_of_NaturalIsomorphism_are_isomorphisms { C D : Category } { F G : Functor C D } { α : NaturalIsomorphism F G } { X : C^.Obj } :
   Inverse (α^.components X) := sorry
+-/
 
 end tqft.categories.natural_transformation
