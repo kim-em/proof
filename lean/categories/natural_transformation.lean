@@ -85,6 +85,7 @@ definition horizontal_composition_of_NaturalTransformations
 -- To define a natural isomorphism, we'll define the functor category, and ask for an isomorphism there.
 -- It's then a lemma that each component is an isomorphism, and vice versa.
 
+@[simp]
 lemma vertical_composition_of_NaturalTransformations_components 
   { C D : Category }
   { F G H : Functor C D }
@@ -93,6 +94,7 @@ lemma vertical_composition_of_NaturalTransformations_components
   { X : C^.Obj } :
   (vertical_composition_of_NaturalTransformations α β)^.components X = D^.compose (α^.components X) (β^.components X) := by blast
 
+@[simp]
 lemma IdentityNaturalTransformation_components
   { C D : Category }
   { F : Functor C D }
@@ -108,30 +110,63 @@ definition FunctorCategory ( C D : Category ) : Category :=
   compose  := @vertical_composition_of_NaturalTransformations C D,
 
   left_identity  := begin
-                     intros F G f,
+                     intros,
+                     apply NaturalTransformations_componentwise_equal,
+                     intros,
+                     blast, -- what is blast actually doing here? it's helpful, but only for a little step.
+                     simp [ D^.left_identity ]
+                     /-
+                     -- This 'simp' applies the lemmas above, effectively implementing:
+                     -- rewrite vertical_composition_of_NaturalTransformations_components,
+                     -- rewrite IdentityNaturalTransformation_components,
+                     -- rewrite D^.left_identity
+                     -/
+                     -- TODO: How can be mark D^.left_identity as automatically available for `simp`?
+                    end, 
+  right_identity := 
+                   /- 
+                   -- This is just a copy and paste of the proof for left_identity.
+                   -- Eventually of course this is unacceptable, and demands appropriate tactics.
+                   -/
+                   begin 
+                     intros,
                      apply NaturalTransformations_componentwise_equal,
                      intros, 
-                     blast, -- what is blast actually doing here? it's helpful, but only for a little step.
-                     rewrite vertical_composition_of_NaturalTransformations_components,
-                     rewrite IdentityNaturalTransformation_components,
-                     rewrite D^.left_identity
+                     blast,
+                     simp [ D^.right_identity ]
                     end, 
-  right_identity := sorry,
-  associativity  := sorry
+  associativity  := begin
+                      intros,
+                      apply NaturalTransformations_componentwise_equal,
+                      intros,
+                      blast,
+                      simp [ D^.associativity ]
+                    end
 }
 
 definition NaturalIsomorphism { C D : Category } ( F G : Functor C D ) := Isomorphism (FunctorCategory C D) F G
 
--- It's a pity we need to separately define this coercion. Somehow we
--- want the definition above to be more transparent?
+-- It's a pity we need to separately define this coercion.
+-- Ideally the coercion from Isomorphism along .morphism would just apply here.
+-- Somehow we want the definition above to be more transparent?
 instance NaturalIsomorphism_coercion_to_NaturalTransformation { C D : Category } { F G : Functor C D } : has_coe (NaturalIsomorphism F G) (NaturalTransformation F G) :=
   { coe := Isomorphism.morphism }
 
--- How do we refer to the components of a NaturalIsomorphism? Below
--- doesn't work.
-/-
+open NaturalTransformation
+
+-- Getting this coercion to work is really painful. We shouldn't have to write
+--     @components C D F G α X
+-- below, but rather just:
+--     α X
+-- or at least
+--     α^.components X
+
 lemma components_of_NaturalIsomorphism_are_isomorphisms { C D : Category } { F G : Functor C D } { α : NaturalIsomorphism F G } { X : C^.Obj } :
-  Inverse (α^.components X) := sorry
--/
+ Inverse (@components C D F G α X) := 
+  {
+    inverse := α^.inverse^.components X,
+    witness_1 := α^.witness_1, -- TODO we need to evaluate both sides of this equation at X.
+    witness_2 := sorry
+  }
 
 end tqft.categories.natural_transformation
