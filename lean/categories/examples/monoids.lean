@@ -10,4 +10,19 @@ import ..monoidal_category
 
 namespace tqft.categories.examples.monoids
 
+open tqft.categories
+
+instance CategoryOfMonoids : Category := 
+{
+    Obj := Π α : Type, monoid α,
+    Hom := sorry,
+
+    identity := sorry,
+    compose  := sorry,
+
+    left_identity  := sorry,
+    right_identity := sorry,
+    associativity  := sorry
+}
+
 end tqft.categories.examples.monoids
