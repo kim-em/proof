@@ -8,9 +8,7 @@ import .natural_transformation
 import .products
 
 open tqft.categories
-open tqft.categories.notations
 open tqft.categories.functor
-open tqft.categories.functor.notations
 open tqft.categories.products
 open tqft.categories.natural_transformation
 
@@ -131,14 +129,14 @@ attribute [instance] MonoidalCategory.to_LaxMonoidalCategory
 instance MonoidalCategory_coercion_to_LaxMonoidalCategory : has_coe MonoidalCategory LaxMonoidalCategory := ⟨MonoidalCategory.to_LaxMonoidalCategory⟩
 --instance MonoidalCategory_coercion_to_OplaxMonoidalCategory : has_coe MonoidalCategory OplaxMonoidalCategory := ⟨MonoidalCategory.to_OplaxMonoidalCategory⟩
 
-namespace MonoidalCategory
-  infix `⊗`:70 := λ {C : MonoidalCategory} (X Y : Obj C),
-                    tensor C (X, Y)
-  infix `⊗`:70 := λ {C : MonoidalCategory} {W X Y Z : Obj C}
-                     (f : Hom C W X) (g : Hom C Y Z),
-                     C^.tensor <$> (f, g)
-end MonoidalCategory
 
+namespace notations
+  infix `⊗`:70 := λ {C : MonoidalCategory} (X Y : C^.Obj),
+                    C^.tensor (X, Y)
+  infix `⊗`:70 := λ {C : MonoidalCategory} {W X Y Z : C^.Obj}
+                     (f : C^.Hom W X) (g : C^.Hom Y Z),
+                     C^.tensor <$> (f, g)
+end notations
 
 definition tensor_on_left (C: MonoidalCategory) (Z: C^.Obj) : Functor C C :=
   {
@@ -174,6 +172,6 @@ structure BraidedMonoidalCategory
 
 structure SymmetricMonoidalCategory
   extends parent: BraidedMonoidalCategory :=
-  (symmetry: vertical_composition_of_NaturalTransformations braiding braiding = IdentityNaturalTransformation (IdentityFunctor (parent × parent)))
+  (symmetry: vertical_composition_of_NaturalTransformations braiding^.morphism braiding^.morphism = IdentityNaturalTransformation (IdentityFunctor (parent × parent)))
 
 end tqft.categories.monoidal_category

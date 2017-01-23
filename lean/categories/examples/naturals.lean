@@ -11,12 +11,10 @@ import ..monoidal_category
 namespace tqft.categories.examples.naturals
 
 open tqft.categories
-open tqft.categories.notations
 open tqft.categories.functor
-open tqft.categories.functor.notations
 open tqft.categories.monoidal_category
 
-instance ℕCategory : Category :=
+definition ℕCategory : Category :=
   {
     Obj := unit,
     Hom := λ _ _, ℕ,
@@ -28,8 +26,8 @@ instance ℕCategory : Category :=
       -- "by blast" checks if the heads of the expressions match,
       -- which is the case for right_identity and associativity, but
       -- not left_identity.
-    right_identity := by blast, --λ a b, add_zero,
-    associativity  := by blast  --λ a b c d, add_assoc
+    right_identity := λ a b, add_zero, -- try these again 'by blast' once the problem below is resolved?
+    associativity  := λ a b c d, add_assoc
   }    
 
 instance DoublingAsFunctor : Functor ℕCategory ℕCategory :=

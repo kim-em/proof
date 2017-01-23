@@ -7,9 +7,7 @@ import .functor
 import .natural_transformation
 
 open tqft.categories
-open tqft.categories.notations
 open tqft.categories.functor
-open tqft.categories.functor.notations
 
 namespace tqft.categories.products
 

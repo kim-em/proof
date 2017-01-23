@@ -10,6 +10,8 @@ import .monoidal_category
 
 namespace tqft.categories.enriched
 
+open tqft.categories.monoidal_category
+
 structure EnrichedCategory :=
   (V: MonoidalCategory)
   (Obj : Type )
