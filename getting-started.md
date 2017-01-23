@@ -108,6 +108,9 @@ last one in the strip of icons on the left), and searching for `lean`. You'll
 likely need to go to 'Preferences' --> 'User Settings' and set the path of
 your Lean binary to match wherever you installed it above.
 
+To inspect the goal state inside a proof, use <kbd>⇧</kbd><kbd>⌘</kbd><kbd>Enter</kbd>.
+To find commands provided by the Lean extension, use <kbd>⇧</kbd><kbd>⌘</kbd><kbd>P</kbd> and search for `lean`.
+
 You may also want to tell your operating system to open all `.lean` files with
 Visual Studio Code. (On a mac: Select a `.lean` file in Finder, hit
 <kbd>⌘</kbd><kbd>I</kbd>, select Visual Studio Code in the 'Open With' section, then
