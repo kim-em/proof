@@ -54,7 +54,7 @@ https://leanprover.github.io/programming_in_lean/?live.
 You'll need to
 * download the source code
 * compile the system
-* set up Emacs
+* set up Visual Studio Code or emacs
 
 #### Downloading the Lean source code ####
 Make sure you've got a copy of `git` installed. On most systems this is
@@ -93,8 +93,26 @@ the commands
 
     mkdir -p build/debug
     cd build/debug
-    cmake -DCMAKE_BUILD_TYPE=DEBUG -G Ninja ../../src
+    cmake -DCMAKE_BUILD_TYPE=DEBUG -DTCMALLOC=OFF -G Ninja ../../src
     ninja
+
+(The `-DTCMALLOC=OFF` is only necessarily until `google-perftools` delivers a
+bug fix on macOS Sierra.)
+
+#### Setting up Visual Studio Code ####
+(This is now my preferred solution, but if you are already an emacs user, see below.)
+
+Install [Visual Studio Code](https://code.visualstudio.com/download), run it,
+and install the lean extension by clicking the 'Extensions' button (it's the
+last one in the strip of icons on the left), and searching for `lean`. You'll
+likely need to go to 'Preferences' --> 'User Settings' and set the path of
+your Lean binary to match wherever you installed it above.
+
+You may also want to tell your operating system to open all `.lean` files with
+Visual Studio Code. (On a mac: Select a `.lean` file in Finder, hit
+<kbd>⌘</kbd><kbd>I</kbd>, select Visual Studio Code in the 'Open With' section, then
+click 'Change All...'.)
+
 
 #### Setting up the Lean Emacs mode ####
 You'll need Emacs, at least version 24.
