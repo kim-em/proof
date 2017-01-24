@@ -1,10 +1,11 @@
 -- Copyright (c) 2017 Scott Morrison. All rights reserved.
 -- Released under Apache 2.0 license as described in the file LICENSE.
 -- Authors: Stephen Morgan, Scott Morrison
-
 import .category
 import .functor
 import .natural_transformation
+
+set_option pp.universes true
 
 open tqft.categories
 open tqft.categories.functor
@@ -42,8 +43,8 @@ namespace ProductCategory
 end ProductCategory
 
 -- These seem extremely tedious.
-lemma product_identity_fst { C D : Category } { X : (C × D)^.Obj } : ((C × D)^.identity X)^.fst = C^.identity X^.fst := by blast
-lemma product_identity_snd { C D : Category } { X : (C × D)^.Obj } : ((C × D)^.identity X)^.snd = D^.identity X^.snd := by blast
+@[simp] lemma product_identity_fst { C D : Category } { X : (C × D)^.Obj } : ((C × D)^.identity X)^.fst = C^.identity X^.fst := by blast
+@[simp] lemma product_identity_snd { C D : Category } { X : (C × D)^.Obj } : ((C × D)^.identity X)^.snd = D^.identity X^.snd := by blast
 
 lemma product_identity { C D : Category } { X : C^.Obj } { Y : D^.Obj } : (C × D)^.identity (X, Y) = (C^.identity X, D^.identity Y) := by blast
 
@@ -58,18 +59,11 @@ definition ProductFunctor { A B C D : Category } ( F : Functor A B ) ( G : Funct
   onMorphisms := λ _ _ f, (F^.onMorphisms f^.fst, G^.onMorphisms f^.snd),
   identities := begin
                   intros X,
-                  rewrite product_identity_fst,
-                  rewrite product_identity_snd,
-                  rewrite F^.identities,
-                  rewrite G^.identities,
-                  rewrite product_identity                              
+                  simp [ F^.identities, G^.identities, product_identity ]                              
                 end,
   functoriality := begin
                      intros X Y Z f g,
-                     rewrite product_compose, 
-                     rewrite product_compose', 
-                     rewrite F^.functoriality, 
-                     rewrite G^.functoriality
+                     simp [ product_compose, product_compose', F^.functoriality, G^.functoriality ]
                    end
 }
 
@@ -89,7 +83,7 @@ definition SwitchProductCategory ( C D : Category ) : Functor (C × D) (D × C) 
                    end
 }
 
-definition ProductCategoryAssociator ( C D E : Category ) : Functor ((C × D) × E) (C × (D × E)) :=
+definition { u v } ProductCategoryAssociator ( C D E : Category.{ u v } ) : Functor ((C × D) × E) (C × (D × E)) :=
 {
   onObjects     := λ X, (X^.fst^.fst, (X^.fst^.snd, X^.snd)),
   onMorphisms   := λ _ _ f, (f^.fst^.fst, (f^.fst^.snd, f^.snd)),

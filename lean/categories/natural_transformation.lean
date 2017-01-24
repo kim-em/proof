@@ -110,18 +110,20 @@ definition FunctorCategory ( C D : Category ) : Category :=
   compose  := @vertical_composition_of_NaturalTransformations C D,
 
   left_identity  := begin
-                     intros,
+                     intros F G f,
                      apply NaturalTransformations_componentwise_equal,
                      intros,
                      blast, -- what is blast actually doing here? it's helpful, but only for a little step.
+
+                     -- Grah! `simp` here stopped working as soon as I introduced universe polymorphism for Category.
                      simp [ D^.left_identity ]
-                     /-
+
                      -- This 'simp' applies the lemmas above, effectively implementing:
                      -- rewrite vertical_composition_of_NaturalTransformations_components,
                      -- rewrite IdentityNaturalTransformation_components,
                      -- rewrite D^.left_identity
-                     -/
-                     -- TODO: How can be mark D^.left_identity as automatically available for `simp`?
+                     
+                     -- TODO: How can we mark D^.left_identity as automatically available for `simp`?
                     end, 
   right_identity := 
                    /- 
@@ -161,6 +163,7 @@ open NaturalTransformation
 -- or at least
 --     α^.components X
 
+/-
 lemma components_of_NaturalIsomorphism_are_isomorphisms { C D : Category } { F G : Functor C D } { α : NaturalIsomorphism F G } { X : C^.Obj } :
  Inverse (@components C D F G α X) := 
   {
@@ -168,5 +171,6 @@ lemma components_of_NaturalIsomorphism_are_isomorphisms { C D : Category } { F G
     witness_1 := α^.witness_1, -- TODO we need to evaluate both sides of this equation at X.
     witness_2 := sorry
   }
+-/
 
 end tqft.categories.natural_transformation

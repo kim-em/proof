@@ -2,6 +2,8 @@
 -- Released under Apache 2.0 license as described in the file LICENSE.
 -- Authors: Stephen Morgan, Scott Morrison
 
+set_option pp.universes true
+
 -- Lean's SMT tactic isn't yet hooked up by default. This snippet makes 'blast' available as an all purpose tactic.
 meta def blast : tactic unit := using_smt $ return ()
 
@@ -13,9 +15,9 @@ meta def blast : tactic unit := using_smt $ return ()
 
 namespace tqft.categories
 
-structure Category :=
-  (Obj : Type)
-  (Hom : Obj -> Obj -> Type)
+structure { u v } Category :=
+  (Obj : Type u)
+  (Hom : Obj -> Obj -> Type v) 
   (identity : Π X : Obj, Hom X X)
   (compose  : Π ⦃X Y Z : Obj⦄, Hom X Y → Hom Y Z → Hom X Z)
 

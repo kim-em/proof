@@ -1,11 +1,12 @@
 -- Copyright (c) 2017 Scott Morrison. All rights reserved.
 -- Released under Apache 2.0 license as described in the file LICENSE.
 -- Authors: Stephen Morgan, Scott Morrison
-
 import .category
 import .functor
 import .natural_transformation
 import .products
+
+--set_option pp.universes true
 
 open tqft.categories
 open tqft.categories.functor
@@ -28,9 +29,17 @@ attribute [instance] PreMonoidalCategory.to_Category
 instance PreMonoidalCategory_coercion : has_coe PreMonoidalCategory Category := 
   ⟨PreMonoidalCategory.to_Category⟩
 
-definition left_associated_triple_tensor ( C : PreMonoidalCategory ) : Functor ((C × C) × C) C :=
+/-
+-- In left_associated_triple_tensor and right_associated_triple_tensor below,
+-- we can't make use of the coercion from PreMonoidalCategory to Category, because
+-- of universe unification restrictions, as discussed in 
+-- https://groups.google.com/d/msg/lean-user/3qzchWkut0g/0QR6_cS8AgAJ
+-- Hence we add the unpleasant explicit coercions `^.to_Category` throughout.
+-/
+
+definition left_associated_triple_tensor ( C : PreMonoidalCategory ) : Functor ((C^.to_Category × C^.to_Category) × C^.to_Category) C^.to_Category :=
   FunctorComposition (C^.tensor × IdentityFunctor C) C^.tensor
-definition right_associated_triple_tensor ( C : PreMonoidalCategory ) : Functor (C × (C × C)) C :=
+definition right_associated_triple_tensor ( C : PreMonoidalCategory ) : Functor (C^.to_Category × (C^.to_Category × C^.to_Category)) C^.to_Category :=
   FunctorComposition (IdentityFunctor C × C^.tensor) C^.tensor
 
 definition Associator ( C : PreMonoidalCategory ) := 
@@ -112,36 +121,36 @@ structure MonoidalCategory
 attribute [class] MonoidalCategory
 attribute [instance] MonoidalCategory.to_LaxMonoidalCategory
 instance MonoidalCategory_coercion_to_LaxMonoidalCategory : has_coe MonoidalCategory LaxMonoidalCategory := ⟨MonoidalCategory.to_LaxMonoidalCategory⟩
-instance MonoidalCategory_coercion_to_OplaxMonoidalCategory : has_coe MonoidalCategory OplaxMonoidalCategory := ⟨MonoidalCategory.to_OplaxMonoidalCategory⟩
+-- instance MonoidalCategory_coercion_to_OplaxMonoidalCategory : has_coe MonoidalCategory OplaxMonoidalCategory := ⟨MonoidalCategory.to_OplaxMonoidalCategory⟩
 
 
 namespace notations
   infix `⊗`:70 := λ {C : MonoidalCategory} (X Y : C^.Obj),
-                    C^.tensor (X, Y)
+                    C^.tensor^.onObjects (X, Y)
   infix `⊗`:70 := λ {C : MonoidalCategory} {W X Y Z : C^.Obj}
                      (f : C^.Hom W X) (g : C^.Hom Y Z),
-                     C^.tensor <$> (f, g)
+                     C^.tensor^.onMorphisms (f, g)
 end notations
 
-definition tensor_on_left (C: MonoidalCategory) (Z: C^.Obj) : Functor C C :=
+definition { u v } tensor_on_left (C: MonoidalCategory.{u v}) (Z: C^.Obj) : Functor.{u v u v} C C :=
   {
-    onObjects := λ X, Z ⊗ X,
+    onObjects := λ X, C^.tensor (Z, X),
     onMorphisms := --λ _ _ f, (C^.identity Z) ⊗ f,
                    --λ _ _ f, C^.tensor <$> (C^.identity Z, f),
                    --λ _ _ f, onMorphisms (C^.tensor) (C^.identity Z f),
                    λ X Y f, @Functor.onMorphisms _ _ (C^.tensor) (Z, X) (Z, Y) (C^.identity Z, f),
     identities := begin
-                    intros,
+                    intros, 
                     pose H := Functor.identities (C^.tensor) (Z, X),
                     -- these next two steps are ridiculous... surely we shouldn't have to do this.
-                    assert ids : Category.identity C = MonoidalCategory.identity C, blast,
+                    assert ids : Category.identity.{u v} C = MonoidalCategory.identity C, blast,
                     rewrite ids,
-                    exact H -- blast doesn't work here?!
+                    exact H -- blast doesn't work here?!                    
                   end,
     functoriality := begin
                        intros,
                        -- similarly here
-                       assert composes : Category.compose C = MonoidalCategory.compose C, blast, 
+                       assert composes : Category.compose.{u v} C = MonoidalCategory.compose C, blast, 
                        rewrite composes,
                        rewrite - C^.interchange,
                        rewrite C^.left_identity
