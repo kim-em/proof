@@ -71,14 +71,26 @@ definition horizontal_composition_of_NaturalTransformations
     components := λ X : C^.Obj, E^.compose (β (F X)) (I^.onMorphisms (α X)),
     naturality := begin
                     intros,
+                    dsimp [ FunctorComposition ],
+                    -- This is obscene! What is the state of automation?
+                    -- Ideally we could just say:
+                    --     some_tactic [ α^.naturality, β^.naturality, E^.associativity, H^.functoriality ]
+                    -- which would search for sequences of rewrites along these equations (and their reverses)
+                    -- or even just
+                    --     some_other_tactic [ α, β, E, H ]
+                    -- which would apply some_tactic using all the equations available as fields on these hypotheses,
+                    -- or even just
+                    --     some_other_tactic
+                    -- which would consider all the available hypotheses.
                     rewrite - β^.naturality,
                     rewrite - β^.naturality,
-                    rewrite FunctorComposition_onMorphisms,
-                    rewrite FunctorComposition_onMorphisms, 
-                    -- I'm stuck for now. It seems either of the next two tactics should apply, but both give errors.
-                    -- rewrite E^.associativity,
-                    -- rewrite - E^.associativity,
-                    exact sorry
+                    rewrite - E^.associativity,
+                    rewrite - H^.functoriality,
+                    rewrite α^.naturality,
+                    rewrite H^.functoriality,
+                    rewrite E^.associativity,
+                    rewrite E^.associativity,
+                    rewrite β^.naturality
                   end
   }
 
@@ -114,16 +126,13 @@ definition FunctorCategory ( C D : Category ) : Category :=
                      apply NaturalTransformations_componentwise_equal,
                      intros,
                      blast, -- what is blast actually doing here? it's helpful, but only for a little step.
-
-                     -- Grah! `simp` here stopped working as soon as I introduced universe polymorphism for Category.
-                     simp [ D^.left_identity ]
+                     simp
 
                      -- This 'simp' applies the lemmas above, effectively implementing:
                      -- rewrite vertical_composition_of_NaturalTransformations_components,
                      -- rewrite IdentityNaturalTransformation_components,
                      -- rewrite D^.left_identity
                      
-                     -- TODO: How can we mark D^.left_identity as automatically available for `simp`?
                     end, 
   right_identity := 
                    /- 
@@ -135,7 +144,7 @@ definition FunctorCategory ( C D : Category ) : Category :=
                      apply NaturalTransformations_componentwise_equal,
                      intros, 
                      blast,
-                     simp [ D^.right_identity ]
+                     simp
                     end, 
   associativity  := begin
                       intros,

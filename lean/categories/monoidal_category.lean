@@ -168,12 +168,12 @@ instance BraidedMonoidalCategory_coercion_to_MonoidalCategory : has_coe BraidedM
 
 -- Coercion of a NaturalIsomorphism to a NaturalTransformation doesn't seem to work here. :-(
 -- I'd hoped that we could just write `C^.braiding` below, rather than `C^.braiding^.morphism`.
-
+/-
 definition Symmetry(C : BraidedMonoidalCategory) :=
   vertical_composition_of_NaturalTransformations C^.braiding^.morphism C^.braiding^.morphism = IdentityNaturalTransformation (IdentityFunctor (C × C))
 
 structure SymmetricMonoidalCategory
   extends parent: BraidedMonoidalCategory :=
   (symmetry: Symmetry parent)
-
+-/
 end tqft.categories.monoidal_category

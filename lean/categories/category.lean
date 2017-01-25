@@ -26,6 +26,9 @@ structure { u v } Category :=
   (associativity  : ∀ ⦃W X Y Z : Obj⦄ (f : Hom W X) (g : Hom X Y) (h : Hom Y Z),
     compose (compose f g) h = compose f (compose g h))
 
+attribute [simp] Category.left_identity
+attribute [simp] Category.right_identity
+
 attribute [class] Category
 /-
 -- Unfortunately declaring Category as a class when it is first declared results

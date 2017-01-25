@@ -17,6 +17,9 @@ structure { u1 v1 u2 v2 } Functor (C : Category.{ u1 v1 }) (D : Category.{ u2 v2
   (functoriality : ∀ ⦃X Y Z : C^.Obj⦄ (f : C^.Hom X Y) (g : C^.Hom Y Z),
     onMorphisms (C^.compose f g) = D^.compose (onMorphisms f) (onMorphisms g))
 
+attribute [simp] Functor.identities
+attribute [simp] Functor.functoriality
+
 -- We define a coercion so that we can write `F X` for the functor `F` applied to the object `X`.
 -- One can still write out `onObjects F X` when needed.
 instance Functor_to_onObjects { C D : Category }: has_coe_to_fun (Functor C D) :=
@@ -57,12 +60,10 @@ definition FunctorComposition { C D E : Category } ( F : Functor C D ) ( G : Fun
   onObjects     := λ X, G (F X),
   onMorphisms   := λ _ _ f, G^.onMorphisms (F^.onMorphisms f),
   identities    := begin
-                     intros,
-                     rewrite [ - G^.identities, - F^.identities ]
+                     intros, simp
                    end,
   functoriality := begin
-                     intros,
-                     rewrite [ - G^.functoriality, - F^.functoriality ]
+                     intros, simp
                    end
 }
 
