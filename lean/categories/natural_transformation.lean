@@ -147,7 +147,7 @@ definition FunctorCategory ( C D : Category ) : Category :=
                       apply NaturalTransformations_componentwise_equal,
                       intros,
                       blast,
-                      simp [ D^.associativity ]
+                      rewrite [ D^.associativity ]
                     end
 }
 

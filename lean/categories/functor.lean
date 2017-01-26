@@ -10,11 +10,11 @@ namespace tqft.categories.functor
 
 structure { u1 v1 u2 v2 } Functor (C : Category.{ u1 v1 }) (D : Category.{ u2 v2 }) :=
   (onObjects   : C^.Obj → D^.Obj)
-  (onMorphisms : Π ⦃X Y : C^.Obj⦄,
+  (onMorphisms : Π { X Y : C^.Obj },
                 C^.Hom X Y → D^.Hom (onObjects X) (onObjects Y))
   (identities : ∀ (X : C^.Obj),
     onMorphisms (C^.identity X) = D^.identity (onObjects X))
-  (functoriality : ∀ ⦃X Y Z : C^.Obj⦄ (f : C^.Hom X Y) (g : C^.Hom Y Z),
+  (functoriality : ∀ { X Y Z : C^.Obj } (f : C^.Hom X Y) (g : C^.Hom Y Z),
     onMorphisms (C^.compose f g) = D^.compose (onMorphisms f) (onMorphisms g))
 
 attribute [simp] Functor.identities
@@ -72,14 +72,27 @@ lemma Functors_pointwise_equal
   { C D : Category } 
   { F G : Functor C D } 
   ( objectWitness : ∀ X : C^.Obj, F X = G X ) 
-  ( morphismWitness : ∀ X Y : C^.Obj, ∀ f : C^.Hom X Y, F^.onMorphisms f = G^.onMorphisms f ) : F = G :=
+  ( morphismWitness : ∀ X Y : C^.Obj, ∀ f : C^.Hom X Y, F^.onMorphisms f == G^.onMorphisms f ) : F = G := sorry
+
+lemma FunctorComposition_left_identity { C D : Category } ( F : Functor C D ) :
+  FunctorComposition (IdentityFunctor C) F = F :=
   begin
+    apply Functors_pointwise_equal,
+    intros, blast, intros, blast
+  end
+
+lemma FunctorComposition_right_identity { C D : Category } ( F : Functor C D ) :
+  FunctorComposition F (IdentityFunctor D) = F :=
+  begin
+    apply Functors_pointwise_equal,
+    intros, blast, intros, blast
   end
 
 lemma FunctorComposition_associative { B C D E : Category } ( F : Functor B C ) ( G : Functor C D ) ( H : Functor D E ) :
   FunctorComposition (FunctorComposition F G) H = FunctorComposition F (FunctorComposition G H) :=
   begin
-    apply Functors_pointwise_equal
+    apply Functors_pointwise_equal,
+    intros, blast, intros, blast
   end
 
 end tqft.categories.functor

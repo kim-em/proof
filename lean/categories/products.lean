@@ -12,7 +12,7 @@ open tqft.categories.functor
 
 namespace tqft.categories.products
 
-definition ProductCategory (C : Category) (D : Category) :
+@[reducible] definition ProductCategory (C : Category) (D : Category) :
   Category :=
   {
     Obj      := C^.Obj × D^.Obj,
@@ -42,28 +42,17 @@ namespace ProductCategory
   notation C `×` D := ProductCategory C D
 end ProductCategory
 
--- These seem extremely tedious.
-@[simp] lemma product_identity_fst { C D : Category } { X : (C × D)^.Obj } : ((C × D)^.identity X)^.fst = C^.identity X^.fst := by blast
-@[simp] lemma product_identity_snd { C D : Category } { X : (C × D)^.Obj } : ((C × D)^.identity X)^.snd = D^.identity X^.snd := by blast
-
-lemma product_identity { C D : Category } { X : C^.Obj } { Y : D^.Obj } : (C × D)^.identity (X, Y) = (C^.identity X, D^.identity Y) := by blast
-
-lemma product_compose { C D : Category } { X Y Z : (C × D)^.Obj } { f : (C × D)^.Hom X Y } { g : (C × D)^.Hom Y Z }: (C × D)^.compose f g = (C^.compose f^.fst g^.fst, D^.compose f^.snd g^.snd) := by blast 
-
-lemma product_compose' { C D : Category } { U V W : C^.Obj } { X Y Z : D^.Obj } { f : C^.Hom U V } { g : C^.Hom V W } { h : D^.Hom X Y } { k : D^.Hom Y Z } :
-  @Category.compose (C × D) (U, X) (V, Y) (W, Z) (f, h) (g, k) = (C^.compose f g, D^.compose h k) := by blast
-
 definition ProductFunctor { A B C D : Category } ( F : Functor A B ) ( G : Functor C D ) : Functor (A × C) (B × D) :=
 {
   onObjects := λ X, (F X^.fst, G X^.snd),
   onMorphisms := λ _ _ f, (F^.onMorphisms f^.fst, G^.onMorphisms f^.snd),
   identities := begin
                   intros X,
-                  simp [ F^.identities, G^.identities, product_identity ]                              
+                  simp
                 end,
   functoriality := begin
                      intros X Y Z f g,
-                     simp [ product_compose, product_compose', F^.functoriality, G^.functoriality ]
+                     simp
                    end
 }
 
@@ -71,7 +60,7 @@ namespace ProductFunctor
   notation F `×` G := ProductFunctor F G
 end ProductFunctor
 
-definition SwitchProductCategory ( C D : Category ) : Functor (C × D) (D × C) :=
+@[reducible] definition SwitchProductCategory ( C D : Category ) : Functor (C × D) (D × C) :=
 {
   onObjects     := λ X, (X^.snd, X^.fst),
   onMorphisms   := λ _ _ f, (f^.snd, f^.fst),
@@ -85,7 +74,9 @@ definition SwitchProductCategory ( C D : Category ) : Functor (C × D) (D × C) 
 
 lemma switch_twice_is_the_identity ( C D : Category ) : FunctorComposition ( SwitchProductCategory C D ) ( SwitchProductCategory D C ) = IdentityFunctor (C × D) :=
 begin
-  apply Functors_pointwise_equal
+  apply Functors_pointwise_equal,
+  exact sorry,
+  exact sorry
 end
 
 definition { u v } ProductCategoryAssociator ( C D E : Category.{ u v } ) : Functor ((C × D) × E) (C × (D × E)) :=
