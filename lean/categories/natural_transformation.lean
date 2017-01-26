@@ -33,7 +33,7 @@ lemma NaturalTransformations_componentwise_equal
     by subst hc
   end
 
-definition IdentityNaturalTransformation { C D : Category } (F : Functor C D) : NaturalTransformation F F :=
+@[reducible] definition IdentityNaturalTransformation { C D : Category } (F : Functor C D) : NaturalTransformation F F :=
   {
     components := λ X, D^.identity (F X),
     naturality := begin
@@ -42,7 +42,7 @@ definition IdentityNaturalTransformation { C D : Category } (F : Functor C D) : 
                   end
   }
 
-definition vertical_composition_of_NaturalTransformations
+@[reducible] definition vertical_composition_of_NaturalTransformations
   { C D : Category }
   { F G H : Functor C D }
   ( α : NaturalTransformation F G )
@@ -61,7 +61,7 @@ definition vertical_composition_of_NaturalTransformations
                   end
   }
 
-definition horizontal_composition_of_NaturalTransformations 
+@[reducible] definition horizontal_composition_of_NaturalTransformations 
   { C D E : Category }
   { F G : Functor C D }
   { H I : Functor D E } 
@@ -71,7 +71,7 @@ definition horizontal_composition_of_NaturalTransformations
     components := λ X : C^.Obj, E^.compose (β (F X)) (I^.onMorphisms (α X)),
     naturality := begin
                     intros,
-                    dsimp [ FunctorComposition ],
+                    blast,
                     -- This is obscene! What is the state of automation?
                     -- Ideally we could just say:
                     --     some_tactic [ α^.naturality, β^.naturality, E^.associativity, H^.functoriality ]
@@ -97,22 +97,6 @@ definition horizontal_composition_of_NaturalTransformations
 -- To define a natural isomorphism, we'll define the functor category, and ask for an isomorphism there.
 -- It's then a lemma that each component is an isomorphism, and vice versa.
 
-@[simp]
-lemma vertical_composition_of_NaturalTransformations_components 
-  { C D : Category }
-  { F G H : Functor C D }
-  { α : NaturalTransformation F G }
-  { β : NaturalTransformation G H }
-  { X : C^.Obj } :
-  (vertical_composition_of_NaturalTransformations α β)^.components X = D^.compose (α^.components X) (β^.components X) := by blast
-
-@[simp]
-lemma IdentityNaturalTransformation_components
-  { C D : Category }
-  { F : Functor C D }
-  { X : C^.Obj } :
-  (IdentityNaturalTransformation F)^.components X = D^.identity (F X) := by blast
-
 definition FunctorCategory ( C D : Category ) : Category :=
 {
   Obj := Functor C D,
@@ -125,14 +109,8 @@ definition FunctorCategory ( C D : Category ) : Category :=
                      intros F G f,
                      apply NaturalTransformations_componentwise_equal,
                      intros,
-                     blast, -- what is blast actually doing here? it's helpful, but only for a little step.
+                     blast, 
                      simp
-
-                     -- This 'simp' applies the lemmas above, effectively implementing:
-                     -- rewrite vertical_composition_of_NaturalTransformations_components,
-                     -- rewrite IdentityNaturalTransformation_components,
-                     -- rewrite D^.left_identity
-                     
                     end, 
   right_identity := 
                    /- 

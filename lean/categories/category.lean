@@ -29,7 +29,7 @@ structure { u v } Category :=
 attribute [simp] Category.left_identity
 attribute [simp] Category.right_identity
 
-attribute [class] Category
+-- attribute [class] Category
 /-
 -- Unfortunately declaring Category as a class when it is first declared results
 -- in an unexpected type signature; this is a feature, not a bug, as Stephen discovered

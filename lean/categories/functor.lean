@@ -47,7 +47,7 @@ open notations
 --{ F   := λ f, Π ⦃X Y : C^.Obj⦄, C^.Hom X Y → D^.Hom (f X) (f Y), -- contrary to usual use, `f` here denotes the Functor.
 --  coe := Functor.onMorphisms }
 
-definition IdentityFunctor ( C: Category ) : Functor C C :=
+@[reducible] definition IdentityFunctor ( C: Category ) : Functor C C :=
 {
   onObjects     := id,
   onMorphisms   := λ _ _ f, f,
@@ -55,7 +55,7 @@ definition IdentityFunctor ( C: Category ) : Functor C C :=
   functoriality := λ _ _ _ _ _, rfl
 }
 
-definition FunctorComposition { C D E : Category } ( F : Functor C D ) ( G : Functor D E ) : Functor C E :=
+@[reducible] definition FunctorComposition { C D E : Category } ( F : Functor C D ) ( G : Functor D E ) : Functor C E :=
 {
   onObjects     := λ X, G (F X),
   onMorphisms   := λ _ _ f, G^.onMorphisms (F^.onMorphisms f),

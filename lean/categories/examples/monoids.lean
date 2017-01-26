@@ -4,9 +4,7 @@
 
 import ..category
 import ..functor
-import ..natural_transformation
-import ..products
-import ..monoidal_category
+import .semigroups
 
 namespace tqft.categories.examples.monoids
 
@@ -16,9 +14,11 @@ set_option pp.universes true
 
 structure monoid_morphism { α β : Type } ( s : monoid α ) ( t: monoid β ) :=
   (map: α → β)
-  (multiplicativity : ∀ x y : α, map(x * y) = map(x) * map(y))
+  (multiplicative : ∀ x y : α, map(x * y) = map(x) * map(y))
+  (unital : map(one) = one)
 
-attribute [simp] monoid_morphism.multiplicativity
+attribute [simp] monoid_morphism.multiplicative
+attribute [simp] monoid_morphism.unital
 
 -- This defines a coercion so we can write `f x` for `map f x`.
 instance monoid_morphism_to_map { α β : Type } { s : monoid α } { t: monoid β } : has_coe_to_fun (monoid_morphism s t) :=
@@ -28,7 +28,8 @@ instance monoid_morphism_to_map { α β : Type } { s : monoid α } { t: monoid �
 definition monoid_identity { α : Type } ( s: monoid α ) : monoid_morphism s s :=
 {
   map := id,
-  multiplicativity := begin intros, blast end
+  multiplicative := begin intros, blast end,
+  unital := begin blast end
 }
 
 definition monoid_morphism_composition
@@ -36,7 +37,8 @@ definition monoid_morphism_composition
   ( f: monoid_morphism s t ) ( g: monoid_morphism t u ) : monoid_morphism s u :=
 {
   map := λ x, g (f x),
-  multiplicativity := begin intros, blast, simp end
+  multiplicative := begin intros, blast, simp end,
+  unital := begin blast, simp end
 }
 
 lemma monoid_morphism_pointwise_equality
@@ -54,7 +56,7 @@ begin
     by subst hc
 end
 
-instance CategoryOfMonoids : Category := 
+definition CategoryOfMonoids : Category := 
 {
     Obj := Σ α : Type, monoid α,
     Hom := λ s t, monoid_morphism s.2 t.2,
@@ -65,9 +67,33 @@ instance CategoryOfMonoids : Category :=
     /-
     -- These proofs are a bit tedious, how do we automate?
     -/
-    left_identity  := begin intros, apply monoid_morphism_pointwise_equality, intros, dsimp [monoid_identity, monoid_morphism_composition], blast end,
-    right_identity := begin intros, apply monoid_morphism_pointwise_equality, intros, dsimp [monoid_identity, monoid_morphism_composition], blast end,
-    associativity  := begin intros, apply monoid_morphism_pointwise_equality, intros, dsimp [monoid_morphism_composition], blast end
+    left_identity  := begin intros, apply monoid_morphism_pointwise_equality, intros, blast end,
+    right_identity := begin intros, apply monoid_morphism_pointwise_equality, intros, blast end,
+    associativity  := begin intros, apply monoid_morphism_pointwise_equality, intros, blast end
+}
+
+open tqft.categories.functor
+open tqft.categories.examples.semigroups
+
+-- Sadly doesn't work:
+-- definition cast_monoid_to_semigroup' {α: Type} (s: monoid α) : semigroup α := s
+definition cast_monoid_to_semigroup {α: Type} (s: monoid α) : semigroup α := @monoid.to_semigroup α s
+
+definition ForgetfulFunctor_Monoids_to_Semigroups : Functor CategoryOfMonoids CategoryOfSemigroups :=
+{
+  onObjects     := λ s, sigma.mk s.1 (@monoid.to_semigroup s.1 s.2),
+  onMorphisms   := λ s t, λ f : monoid_morphism s.2 t.2, 
+                  {
+                    map            := f^.map,
+                    multiplicative := f^.multiplicative
+                  },
+
+  identities    := begin
+                     intros, blast
+                   end,
+  functoriality := begin
+                     intros, blast
+                   end
 }
 
 end tqft.categories.examples.monoids

@@ -24,8 +24,6 @@ structure PreMonoidalCategory
   (interchange: Π { A B C D E F: Obj }, Π f : Hom A B, Π g : Hom B C, Π h : Hom D E, Π k : Hom E F, 
     @Functor.onMorphisms _ _ tensor (A, D) (C, F) ((compose f g), (compose h k)) = compose (@Functor.onMorphisms _ _ tensor (A, D) (B, E) (f, h)) (@Functor.onMorphisms _ _ tensor (B, E) (C, F) (g, k)))
 
-attribute [class] PreMonoidalCategory
-attribute [instance] PreMonoidalCategory.to_Category
 instance PreMonoidalCategory_coercion : has_coe PreMonoidalCategory Category := 
   ⟨PreMonoidalCategory.to_Category⟩
 
@@ -50,11 +48,15 @@ definition Associator ( C : PreMonoidalCategory ) :=
 definition associator_components ( C : PreMonoidalCategory ) :=
   Π X Y Z : C^.Obj, C^.Hom (C^.tensor (C^.tensor (X, Y), Z)) (C^.tensor (X, C^.tensor (Y, Z)))
 
+/-
 definition associator_to_components { C : PreMonoidalCategory } ( α : Associator C ) : associator_components C := 
 begin
+ induction α,
  -- TODO how do we even begin here?
+ -- I just want to change the goal from producing an instance of `associator_components C` to producing the function that actually represents
  exact sorry
 end
+-/
 
 /- 
 -- In general one can't construct an associator from components, because we need proofs of naturality.
@@ -96,8 +98,6 @@ structure LaxMonoidalCategory
 -- It sure would be nice if it read ... Functor (carrier × carrier) carrier
 -- print LaxMonoidalCategory
 
-attribute [class] LaxMonoidalCategory
-attribute [instance] LaxMonoidalCategory.to_PreMonoidalCategory
 instance LaxMonoidalCategory_coercion : has_coe LaxMonoidalCategory PreMonoidalCategory :=
   ⟨LaxMonoidalCategory.to_PreMonoidalCategory⟩
 
@@ -108,8 +108,6 @@ structure OplaxMonoidalCategory
   (backwards_associator : Π (X Y Z : Obj),
      Hom (tensor (X, tensor (Y, Z)))  (tensor (tensor (X, Y), Z)))
 
-attribute [class] OplaxMonoidalCategory
-attribute [instance] OplaxMonoidalCategory.to_PreMonoidalCategory
 instance OplaxMonoidalCategory_coercion : has_coe OplaxMonoidalCategory PreMonoidalCategory :=
   ⟨OplaxMonoidalCategory.to_PreMonoidalCategory⟩
 
@@ -118,11 +116,8 @@ structure MonoidalCategory
   (associators_inverses_1: Π (X Y Z : Obj), compose (associator X Y Z) (backwards_associator X Y Z) = identity (tensor (tensor (X, Y), Z)))
   (associators_inverses_2: Π (X Y Z : Obj), compose (backwards_associator X Y Z) (associator X Y Z) = identity (tensor (X, tensor (Y, Z))))
 
-attribute [class] MonoidalCategory
-attribute [instance] MonoidalCategory.to_LaxMonoidalCategory
 instance MonoidalCategory_coercion_to_LaxMonoidalCategory : has_coe MonoidalCategory LaxMonoidalCategory := ⟨MonoidalCategory.to_LaxMonoidalCategory⟩
--- instance MonoidalCategory_coercion_to_OplaxMonoidalCategory : has_coe MonoidalCategory OplaxMonoidalCategory := ⟨MonoidalCategory.to_OplaxMonoidalCategory⟩
-
+instance MonoidalCategory_coercion_to_OplaxMonoidalCategory : has_coe MonoidalCategory OplaxMonoidalCategory := ⟨MonoidalCategory.to_OplaxMonoidalCategory⟩
 
 namespace notations
   infix `⊗`:70 := λ {C : MonoidalCategory} (X Y : C^.Obj),
