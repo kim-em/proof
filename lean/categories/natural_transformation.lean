@@ -61,12 +61,14 @@ lemma NaturalTransformations_componentwise_equal
                   end
   }
 
+open tqft.categories.functor
+
 @[reducible] definition horizontal_composition_of_NaturalTransformations 
   { C D E : Category }
   { F G : Functor C D }
   { H I : Functor D E } 
   ( α : NaturalTransformation F G )
-  ( β : NaturalTransformation H I ) : NaturalTransformation (tqft.categories.functor.FunctorComposition F H) (tqft.categories.functor.FunctorComposition G I) :=
+  ( β : NaturalTransformation H I ) : NaturalTransformation (FunctorComposition F H) (FunctorComposition G I) :=
   {
     components := λ X : C^.Obj, E^.compose (β (F X)) (I^.onMorphisms (α X)),
     naturality := begin
@@ -93,6 +95,22 @@ lemma NaturalTransformations_componentwise_equal
                     rewrite β^.naturality
                   end
   }
+
+definition whisker_on_left
+  { C D E : Category }
+  ( F : Functor C D )
+  { G H : Functor D E }
+  ( α : NaturalTransformation G H ) :
+  NaturalTransformation (FunctorComposition F G) (FunctorComposition F H) :=
+  horizontal_composition_of_NaturalTransformations (IdentityNaturalTransformation F) α
+
+definition whisker_on_right
+  { C D E : Category }
+  { F G : Functor C D }
+  ( α : NaturalTransformation F G )
+  ( H : Functor D E ) :
+  NaturalTransformation (FunctorComposition F H) (FunctorComposition G H) :=
+  horizontal_composition_of_NaturalTransformations α (IdentityNaturalTransformation H)
 
 -- To define a natural isomorphism, we'll define the functor category, and ask for an isomorphism there.
 -- It's then a lemma that each component is an isomorphism, and vice versa.

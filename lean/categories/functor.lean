@@ -67,7 +67,19 @@ open notations
                    end
 }
 
-lemma FunctorComposition_onMorphisms { C D E : Category } { F : Functor C D } { G : Functor D E } { X Y : C^.Obj } { f : C^.Hom X Y } :
-  (FunctorComposition F G)^.onMorphisms f = G^.onMorphisms (F^.onMorphisms f) := by blast
+-- We'll want to be able to prove that two functors are equal if they are equal on objects and on morphisms.
+lemma Functors_pointwise_equal
+  { C D : Category } 
+  { F G : Functor C D } 
+  ( objectWitness : ∀ X : C^.Obj, F X = G X ) 
+  ( morphismWitness : ∀ X Y : C^.Obj, ∀ f : C^.Hom X Y, F^.onMorphisms f = G^.onMorphisms f ) : F = G :=
+  begin
+  end
+
+lemma FunctorComposition_associative { B C D E : Category } ( F : Functor B C ) ( G : Functor C D ) ( H : Functor D E ) :
+  FunctorComposition (FunctorComposition F G) H = FunctorComposition F (FunctorComposition G H) :=
+  begin
+    apply Functors_pointwise_equal
+  end
 
 end tqft.categories.functor

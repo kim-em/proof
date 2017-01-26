@@ -5,7 +5,7 @@ import .category
 import .functor
 import .natural_transformation
 
-set_option pp.universes true
+-- set_option pp.universes true
 
 open tqft.categories
 open tqft.categories.functor
@@ -82,6 +82,11 @@ definition SwitchProductCategory ( C D : Category ) : Functor (C × D) (D × C) 
                      intros, blast
                    end
 }
+
+lemma switch_twice_is_the_identity ( C D : Category ) : FunctorComposition ( SwitchProductCategory C D ) ( SwitchProductCategory D C ) = IdentityFunctor (C × D) :=
+begin
+  apply Functors_pointwise_equal
+end
 
 definition { u v } ProductCategoryAssociator ( C D E : Category.{ u v } ) : Functor ((C × D) × E) (C × (D × E)) :=
 {

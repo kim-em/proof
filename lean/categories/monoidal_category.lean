@@ -117,7 +117,7 @@ structure MonoidalCategory
   (associators_inverses_2: Π (X Y Z : Obj), compose (backwards_associator X Y Z) (associator X Y Z) = identity (tensor (X, tensor (Y, Z))))
 
 instance MonoidalCategory_coercion_to_LaxMonoidalCategory : has_coe MonoidalCategory LaxMonoidalCategory := ⟨MonoidalCategory.to_LaxMonoidalCategory⟩
-instance MonoidalCategory_coercion_to_OplaxMonoidalCategory : has_coe MonoidalCategory OplaxMonoidalCategory := ⟨MonoidalCategory.to_OplaxMonoidalCategory⟩
+-- instance MonoidalCategory_coercion_to_OplaxMonoidalCategory : has_coe MonoidalCategory OplaxMonoidalCategory := ⟨MonoidalCategory.to_OplaxMonoidalCategory⟩
 
 namespace notations
   infix `⊗`:70 := λ {C : MonoidalCategory} (X Y : C^.Obj),
@@ -137,14 +137,14 @@ definition { u v } tensor_on_left (C: MonoidalCategory.{u v}) (Z: C^.Obj) : Func
     identities := begin
                     intros, 
                     pose H := Functor.identities (C^.tensor) (Z, X),
-                    -- these next two steps are ridiculous... surely we shouldn't have to do this.
+                    -- TODO these next two steps are ridiculous... surely we shouldn't have to do this.
                     assert ids : Category.identity.{u v} C = MonoidalCategory.identity C, blast,
                     rewrite ids,
                     exact H -- blast doesn't work here?!                    
                   end,
     functoriality := begin
                        intros,
-                       -- similarly here
+                       -- TODO similarly here
                        assert composes : Category.compose.{u v} C = MonoidalCategory.compose C, blast, 
                        rewrite composes,
                        rewrite - C^.interchange,
@@ -155,6 +155,22 @@ definition { u v } tensor_on_left (C: MonoidalCategory.{u v}) (Z: C^.Obj) : Func
 definition Braiding(C : MonoidalCategory) := 
   NaturalIsomorphism (C^.tensor) (FunctorComposition (SwitchProductCategory C C) C^.tensor)
 
+set_option pp.universes true
+
+definition squared_Braiding' { C : MonoidalCategory } ( braiding : Braiding C )
+  : NaturalTransformation C^.tensor (FunctorComposition (SwitchProductCategory C C) (FunctorComposition (SwitchProductCategory C C) C^.tensor))
+  := vertical_composition_of_NaturalTransformations braiding^.morphism (whisker_on_left (SwitchProductCategory C C) braiding^.morphism)
+
+/-
+definition squared_Braiding { C : MonoidalCategory } ( braiding : Braiding C )
+  : NaturalTransformation C^.tensor C^.tensor
+  := ??
+-/
+
+definition squared_Braiding { C : MonoidalCategory } ( braiding : Braiding C )
+  : NaturalTransformation C^.tensor C^.tensor
+  := sorry
+
 structure BraidedMonoidalCategory
   extends parent: MonoidalCategory :=
   (braiding: Braiding parent)
@@ -163,9 +179,11 @@ instance BraidedMonoidalCategory_coercion_to_MonoidalCategory : has_coe BraidedM
 
 -- Coercion of a NaturalIsomorphism to a NaturalTransformation doesn't seem to work here. :-(
 -- I'd hoped that we could just write `C^.braiding` below, rather than `C^.braiding^.morphism`.
-/-
+
+check squared_Braiding
+
 definition Symmetry(C : BraidedMonoidalCategory) :=
-  vertical_composition_of_NaturalTransformations C^.braiding^.morphism C^.braiding^.morphism = IdentityNaturalTransformation (IdentityFunctor (C × C))
+  squared_Braiding (C^.braiding) = IdentityNaturalTransformation (IdentityFunctor (C × C))
 
 structure SymmetricMonoidalCategory
   extends parent: BraidedMonoidalCategory :=
