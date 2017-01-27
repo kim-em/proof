@@ -37,8 +37,7 @@ lemma NaturalTransformations_componentwise_equal
   {
     components := λ X, D^.identity (F X),
     naturality := begin
-                    intros,
-                    rewrite [ D^.left_identity, D^.right_identity ]
+                    intros, simp
                   end
   }
 

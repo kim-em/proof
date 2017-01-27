@@ -28,8 +28,8 @@ instance monoid_morphism_to_map { α β : Type } { s : monoid α } { t: monoid �
 definition monoid_identity { α : Type } ( s: monoid α ) : monoid_morphism s s :=
 {
   map := id,
-  multiplicative := begin intros, blast end,
-  unital := begin blast end
+  multiplicative := by blast,
+  unital := by blast
 }
 
 definition monoid_morphism_composition
@@ -37,7 +37,7 @@ definition monoid_morphism_composition
   ( f: monoid_morphism s t ) ( g: monoid_morphism t u ) : monoid_morphism s u :=
 {
   map := λ x, g (f x),
-  multiplicative := begin intros, blast, simp end,
+  multiplicative := begin blast, simp end,
   unital := begin blast, simp end
 }
 
@@ -67,9 +67,9 @@ definition CategoryOfMonoids : Category :=
     /-
     -- These proofs are a bit tedious, how do we automate?
     -/
-    left_identity  := begin intros, apply monoid_morphism_pointwise_equality, intros, blast end,
-    right_identity := begin intros, apply monoid_morphism_pointwise_equality, intros, blast end,
-    associativity  := begin intros, apply monoid_morphism_pointwise_equality, intros, blast end
+    left_identity  := begin intros, apply monoid_morphism_pointwise_equality, blast end,
+    right_identity := begin intros, apply monoid_morphism_pointwise_equality, blast end,
+    associativity  := begin blast end
 }
 
 open tqft.categories.functor
@@ -88,12 +88,8 @@ definition ForgetfulFunctor_Monoids_to_Semigroups : Functor CategoryOfMonoids Ca
                     multiplicative := f^.multiplicative
                   },
 
-  identities    := begin
-                     intros, blast
-                   end,
-  functoriality := begin
-                     intros, blast
-                   end
+  identities    := by blast,
+  functoriality := by blast
 }
 
 end tqft.categories.examples.monoids

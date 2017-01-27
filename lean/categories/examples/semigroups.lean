@@ -24,7 +24,7 @@ instance monoid_semigroup_to_map { α β : Type } { s : semigroup α } { t: semi
 @[reducible] definition semigroup_identity { α : Type } ( s: semigroup α ) : semigroup_morphism s s :=
 {
   map := id,
-  multiplicative := begin intros, blast end
+  multiplicative := by blast
 }
 
 @[reducible] definition semigroup_morphism_composition
@@ -32,7 +32,7 @@ instance monoid_semigroup_to_map { α β : Type } { s : semigroup α } { t: semi
   ( f: semigroup_morphism s t ) ( g: semigroup_morphism t u ) : semigroup_morphism s u :=
 {
   map := λ x, g (f x),
-  multiplicative := begin intros, blast, simp end
+  multiplicative := begin blast, simp end
 }
 
 lemma semigroup_morphism_pointwise_equality
@@ -61,9 +61,9 @@ definition CategoryOfSemigroups : Category :=
     /-
     -- These proofs are a bit tedious, how do we automate?
     -/
-    left_identity  := begin intros, apply semigroup_morphism_pointwise_equality, intros, blast end,
-    right_identity := begin intros, apply semigroup_morphism_pointwise_equality, intros, blast end,
-    associativity  := begin intros, apply semigroup_morphism_pointwise_equality, intros, blast end
+    left_identity  := begin intros, apply semigroup_morphism_pointwise_equality, blast end,
+    right_identity := begin intros, apply semigroup_morphism_pointwise_equality, blast end,
+    associativity  := by blast
 }
 
 end tqft.categories.examples.semigroups

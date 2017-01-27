@@ -21,19 +21,17 @@ namespace tqft.categories.products
     compose  := λ _ _ _ f g, (C^.compose (f^.fst) (g^.fst), D^.compose (f^.snd) (g^.snd)),
 
     left_identity  := begin
-                        intros,
-                        rewrite [ C^.left_identity, D^.left_identity ],
+                        intros, simp,
                         induction f,
                         simp
                       end,
     right_identity := begin
-                        intros,
-                        rewrite [ C^.right_identity, D^.right_identity],
+                        intros, simp,
                         induction f,
                         simp
                       end,
     associativity  := begin
-                        intros,
+                        intros, 
                         rewrite [ C^.associativity, D^.associativity ]
                       end
   }
@@ -47,11 +45,11 @@ definition ProductFunctor { A B C D : Category } ( F : Functor A B ) ( G : Funct
   onObjects := λ X, (F X^.fst, G X^.snd),
   onMorphisms := λ _ _ f, (F^.onMorphisms f^.fst, G^.onMorphisms f^.snd),
   identities := begin
-                  intros X,
+                  intros,
                   simp
                 end,
   functoriality := begin
-                     intros X Y Z f g,
+                     intros,
                      simp
                    end
 }
@@ -64,19 +62,25 @@ end ProductFunctor
 {
   onObjects     := λ X, (X^.snd, X^.fst),
   onMorphisms   := λ _ _ f, (f^.snd, f^.fst),
-  identities    := begin -- seems a shame that blast can't do intros itself
-                     intros, blast
-                   end,
-  functoriality := begin
-                     intros, blast
-                   end
+  identities    := by blast,
+  functoriality := by blast
 }
 
 lemma switch_twice_is_the_identity ( C D : Category ) : FunctorComposition ( SwitchProductCategory C D ) ( SwitchProductCategory D C ) = IdentityFunctor (C × D) :=
 begin
   apply Functors_pointwise_equal,
-  exact sorry,
-  exact sorry
+  begin
+    intros X,
+    blast,
+    induction X,
+    blast
+  end,
+  begin
+    intros X Y f,
+    blast,
+    induction f,
+    blast
+  end
 end
 
 definition { u v } ProductCategoryAssociator ( C D E : Category.{ u v } ) : Functor ((C × D) × E) (C × (D × E)) :=
@@ -84,10 +88,10 @@ definition { u v } ProductCategoryAssociator ( C D E : Category.{ u v } ) : Func
   onObjects     := λ X, (X^.fst^.fst, (X^.fst^.snd, X^.snd)),
   onMorphisms   := λ _ _ f, (f^.fst^.fst, (f^.fst^.snd, f^.snd)),
   identities    := begin
-                     intros, blast 
+                     blast 
                    end,
   functoriality := begin
-                     intros, blast
+                     blast
                    end
 }
 

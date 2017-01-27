@@ -127,7 +127,7 @@ namespace notations
                      C^.tensor^.onMorphisms (f, g)
 end notations
 
-/-
+/- TODO make this work again
 definition { u v } tensor_on_left (C: MonoidalCategory.{u v}) (Z: C^.Obj) : Functor.{u v u v} C C :=
   {
     onObjects := λ X, C^.tensor (Z, X),
