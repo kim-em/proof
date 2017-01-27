@@ -14,40 +14,30 @@ open tqft.categories
 open tqft.categories.functor
 open tqft.categories.monoidal_category
 
-definition ℕCategory : Category :=
+@[reducible] definition ℕCategory : Category :=
   {
     Obj := unit,
     Hom := λ _ _, ℕ,
     identity := λ _, 0,
-    compose  := λ _ _ _, add,
+    compose  := λ _ _ _, nat.add,
 
-    left_identity  := λ _ _, zero_add,
-      -- Sadly, "by blast" doesn't work here. I think this is because
-      -- "by blast" checks if the heads of the expressions match,
-      -- which is the case for right_identity and associativity, but
-      -- not left_identity.
-    right_identity := λ a b, add_zero, -- try these again 'by blast' once the problem below is resolved?
-    associativity  := λ a b c d, add_assoc
+    left_identity  := begin blast, apply nat.zero_add end,
+    right_identity := ♮,
+    associativity  := begin blast, apply nat.add_assoc end
   }    
 
-instance DoublingAsFunctor : Functor ℕCategory ℕCategory :=
+definition DoublingAsFunctor : Functor ℕCategory ℕCategory :=
   { onObjects   := id,
-    onMorphisms := (λ _ _ n, n + n),
-      /-
-      -- Sadly, "by blast" doesn't work below if we replace "n + n"
-      -- with "2 * n".  Again, I think this is because the heads don't
-      -- match. If you use "n * 2", then identities works by blast,
-      -- but functoriality still doesn't.
-      -/
-    identities    := by blast,
-    functoriality := by blast
+    onMorphisms := (λ _ _ n, nat.add n n),
+    identities    := ♮,
+    functoriality := begin blast, exact sorry end
   }
 
-def ℕTensorProduct : Functor (ℕCategory × ℕCategory) ℕCategory :=
+definition ℕTensorProduct : Functor (ℕCategory × ℕCategory) ℕCategory :=
   { onObjects     := prod.fst,
     onMorphisms   := λ _ _ n, n^.fst + n^.snd,
-    identities    := by blast,
-    functoriality := by blast
+    identities    := ♮,
+    functoriality := sorry
   }
 
 def ℕLaxMonoidalCategory : LaxMonoidalCategory :=

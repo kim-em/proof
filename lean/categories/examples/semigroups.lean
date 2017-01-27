@@ -24,7 +24,7 @@ instance monoid_semigroup_to_map { α β : Type } { s : semigroup α } { t: semi
 @[reducible] definition semigroup_identity { α : Type } ( s: semigroup α ) : semigroup_morphism s s :=
 {
   map := id,
-  multiplicative := by blast
+  multiplicative := ♮
 }
 
 @[reducible] definition semigroup_morphism_composition
@@ -63,7 +63,7 @@ definition CategoryOfSemigroups : Category :=
     -/
     left_identity  := begin intros, apply semigroup_morphism_pointwise_equality, blast end,
     right_identity := begin intros, apply semigroup_morphism_pointwise_equality, blast end,
-    associativity  := by blast
+    associativity  := ♮
 }
 
 end tqft.categories.examples.semigroups

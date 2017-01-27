@@ -28,8 +28,8 @@ instance monoid_morphism_to_map { α β : Type } { s : monoid α } { t: monoid �
 definition monoid_identity { α : Type } ( s: monoid α ) : monoid_morphism s s :=
 {
   map := id,
-  multiplicative := by blast,
-  unital := by blast
+  multiplicative := ♮,
+  unital := ♮
 }
 
 definition monoid_morphism_composition
@@ -69,7 +69,7 @@ definition CategoryOfMonoids : Category :=
     -/
     left_identity  := begin intros, apply monoid_morphism_pointwise_equality, blast end,
     right_identity := begin intros, apply monoid_morphism_pointwise_equality, blast end,
-    associativity  := begin blast end
+    associativity  := ♮
 }
 
 open tqft.categories.functor
@@ -88,8 +88,8 @@ definition ForgetfulFunctor_Monoids_to_Semigroups : Functor CategoryOfMonoids Ca
                     multiplicative := f^.multiplicative
                   },
 
-  identities    := by blast,
-  functoriality := by blast
+  identities    := ♮,
+  functoriality := ♮
 }
 
 end tqft.categories.examples.monoids

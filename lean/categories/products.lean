@@ -62,8 +62,8 @@ end ProductFunctor
 {
   onObjects     := λ X, (X^.snd, X^.fst),
   onMorphisms   := λ _ _ f, (f^.snd, f^.fst),
-  identities    := by blast,
-  functoriality := by blast
+  identities    := ♮,
+  functoriality := ♮
 }
 
 lemma switch_twice_is_the_identity ( C D : Category ) : FunctorComposition ( SwitchProductCategory C D ) ( SwitchProductCategory D C ) = IdentityFunctor (C × D) :=

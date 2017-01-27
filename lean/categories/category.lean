@@ -7,8 +7,9 @@ set_option pp.universes true
 -- Lean's SMT tactic isn't yet hooked up by default. This snippet makes 'blast' available as an all purpose tactic.
 --meta def blast : tactic unit := using_smt $ return ()
 open smt_tactic
-meta def blast : tactic unit := using_smt $ intros >> add_lemmas_from_facts >> repeat ematch
+meta def blast : tactic unit := using_smt $ intros >> add_lemmas_from_facts >> repeat_at_most 3 ematch
 
+notation `♮` := by blast
 
 /-
 -- We've decided that Obj and Hom should be fields of Category, rather than parameters.
