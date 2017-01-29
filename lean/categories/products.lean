@@ -68,7 +68,7 @@ end ProductFunctor
 
 lemma switch_twice_is_the_identity ( C D : Category ) : FunctorComposition ( SwitchProductCategory C D ) ( SwitchProductCategory D C ) = IdentityFunctor (C × D) :=
 begin
-  apply Functors_pointwise_equal,
+  fapply Functors_pointwise_equal,
   begin
     intros X,
     blast,

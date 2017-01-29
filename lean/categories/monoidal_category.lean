@@ -36,9 +36,9 @@ instance PreMonoidalCategory_coercion : has_coe PreMonoidalCategory Category :=
 -/
 
 definition left_associated_triple_tensor ( C : PreMonoidalCategory ) : Functor ((C^.to_Category × C^.to_Category) × C^.to_Category) C^.to_Category :=
-  FunctorComposition (C^.tensor × IdentityFunctor C) C^.tensor
+  FunctorComposition (C^.tensor × IdentityFunctor C^.to_Category) C^.tensor
 definition right_associated_triple_tensor ( C : PreMonoidalCategory ) : Functor (C^.to_Category × (C^.to_Category × C^.to_Category)) C^.to_Category :=
-  FunctorComposition (IdentityFunctor C × C^.tensor) C^.tensor
+  FunctorComposition (IdentityFunctor C^.to_Category × C^.tensor) C^.tensor
 
 definition Associator ( C : PreMonoidalCategory ) := 
   NaturalTransformation 

@@ -4,12 +4,12 @@
 
 set_option pp.universes true
 
--- Lean's SMT tactic isn't yet hooked up by default. This snippet makes 'blast' available as an all purpose tactic.
---meta def blast : tactic unit := using_smt $ return ()
 open smt_tactic
 meta def blast : tactic unit := using_smt $ intros >> add_lemmas_from_facts >> repeat_at_most 3 ematch
-
 notation `♮` := by blast
+def {u} auto_cast {α β : Type u} {h : α = β} (a : α) := cast h a
+@[simp] lemma {u} auto_cast_identity {α : Type u} (a : α) : @auto_cast α α ♮ a = a := by blast
+notation `⟦` p `⟧` := @auto_cast _ _ ♮ p
 
 /-
 -- We've decided that Obj and Hom should be fields of Category, rather than parameters.
