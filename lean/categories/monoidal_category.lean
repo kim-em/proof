@@ -91,7 +91,7 @@ structure LaxMonoidalCategory
 -- TODO (far future)
 -- One should prove the first substantial result of this theory: that any two ways to reparenthesize are equal.
 -- It requires introducing a representation of a reparathesization, but the proof should then be an easy induction.
--- It's a good example of something that is so easy for humans, that is better eventually be easy for the computer too!
+-- It's a good example of something that is so easy for humans, that it better eventually be easy for the computer too!
 -/
 
 -- Notice that LaxMonoidalCategory.tensor has a horrible signature...

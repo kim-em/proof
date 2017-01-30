@@ -3,6 +3,7 @@
 -- Authors: Stephen Morgan, Scott Morrison
 
 import ..category
+import ..monoidal_category
 
 namespace tqft.categories.examples.semigroups
 
@@ -21,11 +22,7 @@ instance monoid_semigroup_to_map { α β : Type } { s : semigroup α } { t: semi
 { F   := λ f, Π x : α, β,
   coe := semigroup_morphism.map }
 
-@[reducible] definition semigroup_identity { α : Type } ( s: semigroup α ) : semigroup_morphism s s :=
-{
-  map := id,
-  multiplicative := ♮
-}
+@[reducible] definition semigroup_identity { α : Type } ( s: semigroup α ) : semigroup_morphism s s := ⟨ id, ♮ ⟩
 
 @[reducible] definition semigroup_morphism_composition
   { α β γ : Type } { s: semigroup α } { t: semigroup β } { u: semigroup γ}
@@ -64,6 +61,37 @@ definition CategoryOfSemigroups : Category :=
     left_identity  := begin intros, apply semigroup_morphism_pointwise_equality, blast end,
     right_identity := begin intros, apply semigroup_morphism_pointwise_equality, blast end,
     associativity  := ♮
+}
+
+open tqft.categories.monoidal_category
+
+definition semigroup_product { α β : Type } ( s : semigroup α ) ( t: semigroup β ) : semigroup (α × β) := {
+  mul := λ p q, (p^.fst * q^.fst, p^.snd * q^.snd),
+  -- From https://groups.google.com/d/msg/lean-user/bVs5FdjClp4/cbDZOqq_BAAJ
+  mul_assoc := begin
+                intros,
+                simp [@mul.equations._eqn_1 (α × β)],
+                dsimp,
+                simp
+              end
+}
+
+definition trivial_semigroup: semigroup unit := {
+  mul := λ _ _, unit.star,
+  mul_assoc := ♮
+}
+
+definition SymmetricMonoidalCategoryOfSemigroups : SymmetricMonoidalCategory := {
+  CategoryOfSemigroups with
+  tensor               := sorry,
+  tensor_unit          := sigma.mk unit trivial_semigroup,
+  associator           := sorry,
+  backwards_associator := sorry,
+  associators_inverses_1 := sorry,
+  associators_inverses_2 := sorry,
+  interchange          := sorry,
+  braiding             := sorry,
+  symmetry             := sorry
 }
 
 end tqft.categories.examples.semigroups

@@ -25,12 +25,7 @@ instance monoid_morphism_to_map { α β : Type } { s : monoid α } { t: monoid �
 { F   := λ f, Π x : α, β,
   coe := monoid_morphism.map }
 
-definition monoid_identity { α : Type } ( s: monoid α ) : monoid_morphism s s :=
-{
-  map := id,
-  multiplicative := ♮,
-  unital := ♮
-}
+definition monoid_identity { α : Type } ( s: monoid α ) : monoid_morphism s s := ⟨ id, ♮, ♮ ⟩
 
 definition monoid_morphism_composition
   { α β γ : Type } { s: monoid α } { t: monoid β } { u: monoid γ}
