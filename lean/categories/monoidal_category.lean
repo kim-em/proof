@@ -27,18 +27,10 @@ structure PreMonoidalCategory
 instance PreMonoidalCategory_coercion : has_coe PreMonoidalCategory Category := 
   ⟨PreMonoidalCategory.to_Category⟩
 
-/-
--- In left_associated_triple_tensor and right_associated_triple_tensor below,
--- we can't make use of the coercion from PreMonoidalCategory to Category, because
--- of universe unification restrictions, as discussed in 
--- https://groups.google.com/d/msg/lean-user/3qzchWkut0g/0QR6_cS8AgAJ
--- Hence we add the unpleasant explicit coercions `^.to_Category` throughout.
--/
-
-definition left_associated_triple_tensor ( C : PreMonoidalCategory ) : Functor ((C^.to_Category × C^.to_Category) × C^.to_Category) C^.to_Category :=
-  FunctorComposition (C^.tensor × IdentityFunctor C^.to_Category) C^.tensor
-definition right_associated_triple_tensor ( C : PreMonoidalCategory ) : Functor (C^.to_Category × (C^.to_Category × C^.to_Category)) C^.to_Category :=
-  FunctorComposition (IdentityFunctor C^.to_Category × C^.tensor) C^.tensor
+definition left_associated_triple_tensor ( C : PreMonoidalCategory ) : Functor ((C × C) × C) C :=
+  FunctorComposition (C^.tensor × IdentityFunctor C) C^.tensor
+definition right_associated_triple_tensor ( C : PreMonoidalCategory ) : Functor (C × (C × C)) C :=
+  FunctorComposition (IdentityFunctor C × C^.tensor) C^.tensor
 
 definition Associator ( C : PreMonoidalCategory ) := 
   NaturalTransformation 
@@ -101,7 +93,6 @@ structure LaxMonoidalCategory
 instance LaxMonoidalCategory_coercion : has_coe LaxMonoidalCategory PreMonoidalCategory :=
   ⟨LaxMonoidalCategory.to_PreMonoidalCategory⟩
 
-
 structure OplaxMonoidalCategory
   extends carrier : PreMonoidalCategory :=
   -- TODO better name? unfortunately it doesn't yet make sense to say 'inverse_associator'.
@@ -154,10 +145,14 @@ definition { u v } tensor_on_left (C: MonoidalCategory.{u v}) (Z: C^.Obj) : Func
   }
   -/
 
-definition Braiding(C : MonoidalCategory) := 
-  NaturalIsomorphism (C^.tensor) (FunctorComposition (SwitchProductCategory C C) C^.tensor)
+/-
+-- I don't really understand why the universe annotations are needed in Braiding and in squaredBraiding.
+-- My guess is that it is related to
+-- https://groups.google.com/d/msg/lean-user/3qzchWkut0g/0QR6_cS8AgAJ
+-/
 
-set_option pp.universes true
+definition { u v } Braiding(C : MonoidalCategory.{u v}) := 
+  NaturalIsomorphism (C^.tensor) (FunctorComposition (SwitchProductCategory C^.to_LaxMonoidalCategory^.to_PreMonoidalCategory^.to_Category C) C^.tensor)
 
 structure BraidedMonoidalCategory
   extends parent: MonoidalCategory :=
@@ -165,7 +160,7 @@ structure BraidedMonoidalCategory
 
 instance BraidedMonoidalCategory_coercion_to_MonoidalCategory : has_coe BraidedMonoidalCategory MonoidalCategory := ⟨BraidedMonoidalCategory.to_MonoidalCategory⟩
 
-definition squared_Braiding { C : MonoidalCategory } ( braiding : Braiding C )
+definition { u v } squared_Braiding { C : MonoidalCategory.{u v} } ( braiding : Braiding C )
   : NaturalTransformation C^.tensor C^.tensor :=
   begin
     pose square := vertical_composition_of_NaturalTransformations braiding^.morphism (whisker_on_left (SwitchProductCategory C C) braiding^.morphism),
