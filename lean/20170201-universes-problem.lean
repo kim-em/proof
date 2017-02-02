@@ -24,7 +24,7 @@ instance semigroup_morphism_to_map { α β : Type u } { s : semigroup α } { t: 
   multiplicative := begin blast, simp end
 }
 
-definition semigroup_product { α β : Type u } ( s : semigroup α ) ( t: semigroup β ) : semigroup (α × β) := {
+@[reducible] definition semigroup_product { α β : Type u } ( s : semigroup α ) ( t: semigroup β ) : semigroup (α × β) := {
   mul := λ p q, (p^.fst * q^.fst, p^.snd * q^.snd),
   mul_assoc := begin
                 intros,
@@ -42,12 +42,11 @@ definition semigroup_morphism_product
   map := λ p, (f p.1, g p.2),
   multiplicative :=
     begin
+      -- cd https://groups.google.com/d/msg/lean-user/bVs5FdjClp4/tfHiVjLIBAAJ
       intros,
-      induction x with x1 x2,
-      induction y with y1 y2, 
-      -- what next?
-      -- unfold mul,
-      exact sorry
+      unfold mul has_mul.mul,
+      dsimp,
+      simp
     end
 }
 
