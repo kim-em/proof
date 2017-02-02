@@ -12,6 +12,8 @@ open tqft.categories.functor
 
 namespace tqft.categories.products
 
+universe variables u v
+
 @[reducible] definition ProductCategory (C : Category) (D : Category) :
   Category :=
   {
@@ -83,7 +85,7 @@ begin
   end
 end
 
-definition { u v } ProductCategoryAssociator ( C D E : Category.{ u v } ) : Functor ((C × D) × E) (C × (D × E)) :=
+definition ProductCategoryAssociator ( C D E : Category.{ u v } ) : Functor ((C × D) × E) (C × (D × E)) :=
 {
   onObjects     := λ X, (X^.fst^.fst, (X^.fst^.snd, X^.snd)),
   onMorphisms   := λ _ _ f, (f^.fst^.fst, (f^.fst^.snd, f^.snd)),

@@ -15,6 +15,8 @@ open tqft.categories.natural_transformation
 
 namespace tqft.categories.monoidal_category
 
+universe variables u v
+
 structure PreMonoidalCategory
   -- this is only for internal use: it has a tensor product, but no associator at all
   -- it's not interesting mathematically, but may allow us to introduce usable notation for the tensor product
@@ -151,7 +153,7 @@ definition { u v } tensor_on_left (C: MonoidalCategory.{u v}) (Z: C^.Obj) : Func
 -- https://groups.google.com/d/msg/lean-user/3qzchWkut0g/0QR6_cS8AgAJ
 -/
 
-definition { u v } Braiding(C : MonoidalCategory.{u v}) := 
+definition Braiding(C : MonoidalCategory.{u v}) := 
   NaturalIsomorphism (C^.tensor) (FunctorComposition (SwitchProductCategory C^.to_LaxMonoidalCategory^.to_PreMonoidalCategory^.to_Category C) C^.tensor)
 
 structure BraidedMonoidalCategory
@@ -160,7 +162,7 @@ structure BraidedMonoidalCategory
 
 instance BraidedMonoidalCategory_coercion_to_MonoidalCategory : has_coe BraidedMonoidalCategory MonoidalCategory := ⟨BraidedMonoidalCategory.to_MonoidalCategory⟩
 
-definition { u v } squared_Braiding { C : MonoidalCategory.{u v} } ( braiding : Braiding C )
+definition squared_Braiding { C : MonoidalCategory.{u v} } ( braiding : Braiding C )
   : NaturalTransformation C^.tensor C^.tensor :=
   begin
     pose square := vertical_composition_of_NaturalTransformations braiding^.morphism (whisker_on_left (SwitchProductCategory C C) braiding^.morphism),

@@ -8,7 +8,9 @@ open tqft.categories
 
 namespace tqft.categories.functor
 
-structure { u1 v1 u2 v2 } Functor (C : Category.{ u1 v1 }) (D : Category.{ u2 v2 }) :=
+universe variables u1 v1 u2 v2
+
+structure Functor (C : Category.{ u1 v1 }) (D : Category.{ u2 v2 }) :=
   (onObjects   : C^.Obj → D^.Obj)
   (onMorphisms : Π { X Y : C^.Obj },
                 C^.Hom X Y → D^.Hom (onObjects X) (onObjects Y))

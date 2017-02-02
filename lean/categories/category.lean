@@ -19,7 +19,9 @@ notation `⟦` p `⟧` := @auto_cast _ _ ♮ p
 
 namespace tqft.categories
 
-structure { u v } Category :=
+universe variables u v
+
+structure Category :=
   (Obj : Type u)
   (Hom : Obj → Obj → Type v) 
   (identity : Π X : Obj, Hom X X)

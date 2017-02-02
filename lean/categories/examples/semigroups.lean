@@ -7,27 +7,25 @@ import ..monoidal_category
 
 namespace tqft.categories.examples.semigroups
 
+universe variables u
+
 open tqft.categories
 
 set_option pp.universes true
 
-structure { u } semigroup_morphism { α β : Type u } ( s : semigroup α ) ( t: semigroup β ) :=
+structure semigroup_morphism { α β : Type u } ( s : semigroup α ) ( t: semigroup β ) :=
   (map: α → β)
   (multiplicative : ∀ x y : α, map(x * y) = map(x) * map(y))
 
 attribute [simp] semigroup_morphism.multiplicative
 
--- TODO followup https://groups.google.com/d/msg/lean-user/2zyEqXCZwi0/z70wTYFkBQAJ
--- This defines a coercion so we can write `f x` for `map f x`.
-definition { u } monoid_semigroup_to_map { α β : Type u } { s : semigroup α } { t: semigroup β } : has_coe_to_fun (semigroup_morphism s t) :=
+instance monoid_semigroup_to_map { α β : Type u } { s : semigroup α } { t: semigroup β } : has_coe_to_fun (semigroup_morphism s t) :=
 { F   := λ f, Π x : α, β,
   coe := semigroup_morphism.map }
 
-attribute [instance] monoid_semigroup_to_map
+@[reducible] definition semigroup_identity { α : Type u } ( s: semigroup α ) : semigroup_morphism s s := ⟨ id, ♮ ⟩
 
-@[reducible] definition { u } semigroup_identity { α : Type u } ( s: semigroup α ) : semigroup_morphism s s := ⟨ id, ♮ ⟩
-
-@[reducible] definition { u } semigroup_morphism_composition
+@[reducible] definition semigroup_morphism_composition
   { α β γ : Type u } { s: semigroup α } { t: semigroup β } { u: semigroup γ}
   ( f: semigroup_morphism s t ) ( g: semigroup_morphism t u ) : semigroup_morphism s u :=
 {
@@ -35,7 +33,7 @@ attribute [instance] monoid_semigroup_to_map
   multiplicative := begin blast, simp end
 }
 
-lemma { u } semigroup_morphism_pointwise_equality
+lemma semigroup_morphism_pointwise_equality
   { α β : Type u } { s : semigroup α } { t: semigroup β }
   ( f g : semigroup_morphism s t )
   ( w : ∀ x : α, f x = g x) : f = g :=
@@ -50,7 +48,7 @@ begin
     by subst hc
 end
 
-definition { u } CategoryOfSemigroups : Category := 
+definition CategoryOfSemigroups : Category := 
 {
     Obj := Σ α : Type u, semigroup α,
     Hom := λ s t, semigroup_morphism s.2 t.2,
@@ -68,7 +66,7 @@ definition { u } CategoryOfSemigroups : Category :=
 
 open tqft.categories.monoidal_category
 
-definition { u } semigroup_product { α β : Type u } ( s : semigroup α ) ( t: semigroup β ) : semigroup (α × β) := {
+definition semigroup_product { α β : Type u } ( s : semigroup α ) ( t: semigroup β ) : semigroup (α × β) := {
   mul := λ p q, (p^.fst * q^.fst, p^.snd * q^.snd),
   -- From https://groups.google.com/d/msg/lean-user/bVs5FdjClp4/cbDZOqq_BAAJ
   mul_assoc := begin
@@ -79,13 +77,21 @@ definition { u } semigroup_product { α β : Type u } ( s : semigroup α ) ( t: 
               end
 }
 
-definition { u } semigroup_morphism_product
+definition semigroup_morphism_product
   { α β γ δ : Type u }
   { s_f : semigroup α } { s_g: semigroup β } { t_f : semigroup α } { t_g: semigroup β }
   ( f : semigroup_morphism s_f t_f ) ( g : semigroup_morphism s_g t_g )
   : semigroup_morphism (semigroup_product s_f s_g) (semigroup_product t_f t_g) := {
-  map := sorry,
-  multiplicative := sorry
+  map := λ p, (f p.1, g p.2),
+  multiplicative :=
+    begin
+      intros,
+      induction x with x1 x2,
+      induction y with y1 y2, 
+      -- what next?
+      -- unfold mul,
+      exact sorry
+    end
 }
 
 definition trivial_semigroup: semigroup unit := {
@@ -93,22 +99,22 @@ definition trivial_semigroup: semigroup unit := {
   mul_assoc := ♮
 }
 
-definition SymmetricMonoidalCategoryOfSemigroups : SymmetricMonoidalCategory := {
-  CategoryOfSemigroups with
-  tensor               := {
-    onObjects   := λ p, sigma.mk (p.1.1 × p.2.1) (semigroup_product p.1.2 p.2.2),
-    onMorphisms := λ s t f, @semigroup_morphism_product _ _ _ _ s^.fst.1 ,
-    identities   := sorry,
-    functoriality := sorry
-  },
-  tensor_unit          := sigma.mk unit trivial_semigroup,
-  associator           := sorry,
-  backwards_associator := sorry,
-  associators_inverses_1 := sorry,
-  associators_inverses_2 := sorry,
-  interchange          := sorry,
-  braiding             := sorry,
-  symmetry             := sorry
-}
+-- definition SymmetricMonoidalCategoryOfSemigroups : SymmetricMonoidalCategory := {
+--   CategoryOfSemigroups.{u} with
+--   tensor               := {
+--     onObjects   := λ p, sigma.mk (p.1.1 × p.2.1) (semigroup_product p.1.2 p.2.2),
+--     onMorphisms := λ s t f, semigroup_morphism_product f.1 f.2,
+--     identities   := sorry,
+--     functoriality := sorry
+--   },
+--   tensor_unit          := sigma.mk unit trivial_semigroup,
+--   associator           := sorry,
+--   backwards_associator := sorry,
+--   associators_inverses_1 := sorry,
+--   associators_inverses_2 := sorry,
+--   interchange          := sorry,
+--   braiding             := sorry,
+--   symmetry             := sorry
+-- }
 
 end tqft.categories.examples.semigroups
