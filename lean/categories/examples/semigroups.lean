@@ -66,7 +66,7 @@ definition CategoryOfSemigroups : Category :=
 
 open tqft.categories.monoidal_category
 
-definition semigroup_product { α β : Type u } ( s : semigroup α ) ( t: semigroup β ) : semigroup (α × β) := {
+@[reducible] definition semigroup_product { α β : Type u } ( s : semigroup α ) ( t: semigroup β ) : semigroup (α × β) := {
   mul := λ p q, (p^.fst * q^.fst, p^.snd * q^.snd),
   -- From https://groups.google.com/d/msg/lean-user/bVs5FdjClp4/cbDZOqq_BAAJ
   mul_assoc := begin
