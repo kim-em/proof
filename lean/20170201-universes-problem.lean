@@ -1,5 +1,7 @@
 universe variables u v u1 u2 v1 v2
 
+set_option pp.universes true
+
 open smt_tactic
 meta def blast : tactic unit := using_smt $ intros >> add_lemmas_from_facts >> repeat_at_most 3 ematch
 notation `♮` := by blast
@@ -42,7 +44,7 @@ definition semigroup_morphism_product
   map := λ p, (f p.1, g p.2),
   multiplicative :=
     begin
-      -- cd https://groups.google.com/d/msg/lean-user/bVs5FdjClp4/tfHiVjLIBAAJ
+      -- cf https://groups.google.com/d/msg/lean-user/bVs5FdjClp4/tfHiVjLIBAAJ
       intros,
       unfold mul has_mul.mul,
       dsimp,
@@ -74,14 +76,11 @@ structure PreMonoidalCategory
   extends carrier : Category :=
   (tensor : Functor (carrier × carrier) carrier)
 
-
 definition CategoryOfSemigroups : Category := 
 {
     Obj := Σ α : Type u, semigroup α,
     Hom := λ s t, semigroup_morphism s.2 t.2
 }
-
-set_option pp.universes true
 
 definition PreMonoidalCategoryOfSemigroups : PreMonoidalCategory := {
   CategoryOfSemigroups.{u} with
