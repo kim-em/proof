@@ -38,7 +38,7 @@ instance semigroup_morphism_to_map { α β : Type u } { s : semigroup α } { t: 
 
 definition semigroup_morphism_product
   { α β γ δ : Type u }
-  { s_f : semigroup α } { s_g: semigroup β } { t_f : semigroup α } { t_g: semigroup β }
+  { s_f : semigroup α } { s_g: semigroup β } { t_f : semigroup γ } { t_g: semigroup δ }
   ( f : semigroup_morphism s_f t_f ) ( g : semigroup_morphism s_g t_g )
   : semigroup_morphism (semigroup_product s_f s_g) (semigroup_product t_f t_g) := {
   map := λ p, (f p.1, g p.2),
