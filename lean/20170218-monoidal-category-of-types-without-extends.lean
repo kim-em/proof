@@ -8,22 +8,33 @@ def pointwise_attribute : user_attribute := {
 
 run_command attribute.register `pointwise_attribute
 
+def pointwise_2_attribute : user_attribute := {
+  name := `pointwise_2,
+  descr := "A lemma that proves things are equal using the fact they are pointwise equal, generating two subgoals."
+}
+
+run_command attribute.register `pointwise_2_attribute
+
 /- Try to apply one of the given lemas, it succeeds if one of them succeeds. -/
 meta def any_apply : list name → tactic unit
 | []      := failed
 | (c::cs) := (mk_const c >>= fapply) <|> any_apply cs
 
-meta def smt   : tactic unit := using_smt $ intros >> add_lemmas_from_facts >> try ematch >> try simp
+meta def smt_simp        : tactic unit := using_smt $ intros >> try simp
+meta def smt_ematch : tactic unit := using_smt $ intros >> add_lemmas_from_facts >> try ematch
 
 meta def pointwise (and_then : tactic unit) : tactic unit :=
 do cs ← attribute.get_instances `pointwise,
    try (any_apply cs >> and_then)
 
+meta def pointwise_2 (and_then : tactic unit) : tactic unit :=
+do cs ← attribute.get_instances `pointwise_2,
+   try (any_apply cs >> repeat_at_most 2 and_then)
+
 attribute [pointwise] funext
 
-meta def blast : tactic unit := smt >> pointwise (repeat_at_most 2 blast) -- pointwise equality of functors creates two goals
+meta def blast        : tactic unit := smt_simp >> pointwise blast >> pointwise_2 blast -- pointwise equality of functors creates two goals
 
--- In a timing test on 2017-02-18, I found that using `abstract { blast }` instead of just `blast` resulted in a 5x speed-up!
 notation `♮` := by abstract { blast }
 
 @[pointwise] lemma {u v} pair_equality {α : Type u} {β : Type v} { X: α × β }: (X^.fst, X^.snd) = X := begin induction X, blast end
@@ -32,9 +43,8 @@ notation `♮` := by abstract { blast }
 attribute [pointwise] subtype.eq
 
 def {u} auto_cast {α β : Type u} {h : α = β} (a : α) := cast h a
-@[simp] lemma {u} auto_cast_identity {α : Type u} (a : α) : @auto_cast α α ♮ a = a := ♮
-notation `⟦` p `⟧` := @auto_cast _ _ ♮ p
-
+@[simp] lemma {u} auto_cast_identity {α : Type u} (a : α) : @auto_cast α α (by smt_ematch) a = a := ♮
+notation `⟦` p `⟧` := @auto_cast _ _ (by smt_ematch) p
 universe variables u v
 
 structure Category :=
@@ -180,23 +190,22 @@ definition whisker_on_right
   NaturalTransformation (FunctorComposition F H) (FunctorComposition G H) :=
   horizontal_composition_of_NaturalTransformations α (IdentityNaturalTransformation H)
 
-@[reducible] definition ProductCategory (C : Category.{u1 v1}) (D : Category.{u2 v2}) :
-  Category :=
-  {
-    Obj      := C^.Obj × D^.Obj,
-    Hom      := (λ X Y : C^.Obj × D^.Obj, C^.Hom (X^.fst) (Y^.fst) × D^.Hom (X^.snd) (Y^.snd)),
-    identity := λ X, (C^.identity (X^.fst), D^.identity (X^.snd)),
-    compose  := λ _ _ _ f g, (C^.compose (f^.fst) (g^.fst), D^.compose (f^.snd) (g^.snd)),
+@[reducible] definition ProductCategory (C : Category.{u1 v1}) (D : Category.{u2 v2}) : Category :=
+{
+  Obj      := C^.Obj × D^.Obj,
+  Hom      := (λ X Y : C^.Obj × D^.Obj, C^.Hom (X^.fst) (Y^.fst) × D^.Hom (X^.snd) (Y^.snd)),
+  identity := λ X, (C^.identity (X^.fst), D^.identity (X^.snd)),
+  compose  := λ _ _ _ f g, (C^.compose (f^.fst) (g^.fst), D^.compose (f^.snd) (g^.snd)),
 
-    left_identity  := ♮,
-    right_identity := ♮,
-    associativity  := begin
-                        blast,
-                        begin[smt]
-                          eblast_using [ Category.associativity ]
-                        end
+  left_identity  := ♮,
+  right_identity := ♮,
+  associativity  := begin
+                      blast,
+                      begin[smt]
+                        eblast_using [ Category.associativity ]
                       end
-  }
+                    end
+}
 
 namespace ProductCategory
   notation C `×` D := ProductCategory C D
@@ -257,10 +266,13 @@ instance PreMonoidalCategory_coercion : has_coe PreMonoidalCategory Category :=
   ⟨PreMonoidalCategory.category⟩
 
 -- Copying fields. TODO: automate
-@[reducible] definition PreMonoidalCategory.Obj      ( C : PreMonoidalCategory ) := @Category.Obj      C^.category
-@[reducible] definition PreMonoidalCategory.Hom      ( C : PreMonoidalCategory ) := @Category.Hom      C^.category
-@[reducible] definition PreMonoidalCategory.identity ( C : PreMonoidalCategory ) := @Category.identity C^.category
-@[reducible] definition PreMonoidalCategory.compose  ( C : PreMonoidalCategory ) := @Category.compose  C^.category
+@[reducible] definition PreMonoidalCategory.Obj            ( C : PreMonoidalCategory ) := @Category.Obj            C^.category
+@[reducible] definition PreMonoidalCategory.Hom            ( C : PreMonoidalCategory ) := @Category.Hom            C^.category
+@[reducible] definition PreMonoidalCategory.identity       ( C : PreMonoidalCategory ) := @Category.identity       C^.category
+@[reducible] definition PreMonoidalCategory.compose        ( C : PreMonoidalCategory ) := @Category.compose        C^.category
+@[reducible] definition PreMonoidalCategory.left_identity  ( C : PreMonoidalCategory ) := @Category.left_identity  C^.category
+@[reducible] definition PreMonoidalCategory.right_identity ( C : PreMonoidalCategory ) := @Category.right_identity C^.category
+@[reducible] definition PreMonoidalCategory.associativity  ( C : PreMonoidalCategory ) := @Category.associativity  C^.category
 
 definition left_associated_triple_tensor ( C : PreMonoidalCategory.{ u v } ) : Functor ((C × C) × C) C :=
   FunctorComposition (C^.tensor × IdentityFunctor C) C^.tensor
@@ -288,7 +300,7 @@ definition pentagon_3step_3 { C : PreMonoidalCategory.{ u v } } ( α : Associato
   whisker_on_left
     (FunctorComposition
       (ProductCategoryAssociator C C C × IdentityFunctor C)
-      (ProductCategoryAssociator C (↑C × ↑C) C))
+      (ProductCategoryAssociator C (C × C) C))
     (whisker_on_right
       (IdentityNaturalTransformation (IdentityFunctor C) × α)
       C^.tensor)
@@ -308,8 +320,8 @@ definition pentagon_2step_1 { C : PreMonoidalCategory.{ u v } } ( α : Associato
 definition pentagon_2step_2 { C : PreMonoidalCategory.{ u v } } ( α : Associator.{ u v } C ) :=
   whisker_on_left
     (FunctorComposition
-      (ProductCategoryAssociator (↑C × ↑C) C C)
-      (IdentityFunctor (↑C × ↑C) × C^.tensor))
+      (ProductCategoryAssociator (C × C) C C)
+      (IdentityFunctor (C × C) × C^.tensor))
     α
 
 definition pentagon_2step { C : PreMonoidalCategory.{ u v } } ( α : Associator.{ u v } C ) :=
@@ -326,29 +338,70 @@ instance MonoidalCategory_coercion : has_coe MonoidalCategory.{u v} PreMonoidalC
   ⟨MonoidalCategory.parent⟩
 
 -- Copying fields. TODO: automate
-@[reducible] definition MonoidalCategory.Obj      ( C : MonoidalCategory ) := @PreMonoidalCategory.Obj      C^.parent
-@[reducible] definition MonoidalCategory.Hom      ( C : MonoidalCategory ) := @PreMonoidalCategory.Hom      C^.parent
-@[reducible] definition MonoidalCategory.identity ( C : MonoidalCategory ) := @PreMonoidalCategory.identity C^.parent
-@[reducible] definition MonoidalCategory.compose  ( C : MonoidalCategory ) := @PreMonoidalCategory.compose  C^.parent
-@[reducible] definition MonoidalCategory.tensor   ( C : MonoidalCategory ) := @PreMonoidalCategory.tensor   C^.parent
+@[reducible] definition MonoidalCategory.Obj            ( C : MonoidalCategory ) := @PreMonoidalCategory.Obj            C^.parent
+@[reducible] definition MonoidalCategory.Hom            ( C : MonoidalCategory ) := @PreMonoidalCategory.Hom            C^.parent
+@[reducible] definition MonoidalCategory.identity       ( C : MonoidalCategory ) := @PreMonoidalCategory.identity       C^.parent
+@[reducible] definition MonoidalCategory.compose        ( C : MonoidalCategory ) := @PreMonoidalCategory.compose        C^.parent
+@[reducible] definition MonoidalCategory.left_identity  ( C : MonoidalCategory ) := @PreMonoidalCategory.left_identity  C^.parent
+@[reducible] definition MonoidalCategory.right_identity ( C : MonoidalCategory ) := @PreMonoidalCategory.right_identity C^.parent
+@[reducible] definition MonoidalCategory.associativity  ( C : MonoidalCategory ) := @PreMonoidalCategory.associativity  C^.parent
+@[reducible] definition MonoidalCategory.tensor         ( C : MonoidalCategory ) := @PreMonoidalCategory.tensor         C^.parent
 
-definition PreMonoidalCategoryOfTypes : PreMonoidalCategory :=
-{
-    category := CategoryOfTypes,
-    tensor := {
-        onObjects     := λ p, prod p.1 p.2,
-        onMorphisms   := λ _ _ p, λ q, (p.1 q.1, p.2 q.2),
-        identities    := ♮,
-        functoriality := ♮
-    }
-}
+@[reducible] definition MonoidalCategory.tensorObjects   ( C : MonoidalCategory ) ( X Y : C^.Obj ) : C^.Obj := C^.tensor (X, Y)
+@[reducible] definition MonoidalCategory.tensorMorphisms ( C : MonoidalCategory ) { W X Y Z : C^.Obj } ( f : C^.Hom W X ) ( g : C^.Hom Y Z ) : C^.Hom (C^.tensor (W, Y)) (C^.tensor (X, Z)) := C^.tensor^.onMorphisms (f, g)
 
-definition MonoidalCategoryOfTypes : MonoidalCategory :=
+@[reducible] definition MonoidalCategory.interchange
+  ( C : MonoidalCategory )
+  { U V W X Y Z: C^.Obj }
+  ( f : C^.Hom U V )( g : C^.Hom V W )( h : C^.Hom X Y )( k : C^.Hom Y Z ) : 
+  @Functor.onMorphisms _ _ C^.tensor (U, X) (W, Z) ((C^.compose f g), (C^.compose h k)) = C^.compose (@Functor.onMorphisms _ _ C^.tensor (U, X) (V, Y) (f, h)) (@Functor.onMorphisms _ _ C^.tensor (V, Y) (W, Z) (g, k)) :=
+  @Functor.functoriality (C × C) C C^.tensor (U, X) (V, Y) (W, Z) (f, h) (g, k)
+
+-- definition TensorProductOfTypes : TensorProduct CategoryOfTypes := 
+-- {
+--   onObjects     := λ p, prod p.1 p.2,
+--   onMorphisms   := λ _ _ p, λ q, (p.1 q.1, p.2 q.2),
+--   identities    := ♮,
+--   functoriality := ♮
+-- }
+
+-- definition PreMonoidalCategoryOfTypes : PreMonoidalCategory := 
+-- {
+--   category := CategoryOfTypes,
+--   tensor := TensorProductOfTypes
+-- }
+
+-- definition TypeAssociator : Associator PreMonoidalCategoryOfTypes := 
+-- {
+--   components := λ p, λ t, (t.1.1,(t.1.2, t.2)),
+--   naturality := ♮
+-- }
+
+-- definition MonoidalCategoryOfTypes : MonoidalCategory := {
+--   parent := PreMonoidalCategoryOfTypes,
+--   associator_transformation := TypeAssociator,
+--   pentagon := ♮
+-- }
+
+local attribute [reducible] lift_t coe_t coe_b
+
+definition tensor_on_left { C: MonoidalCategory.{u v} } ( Z: C^.Obj ) : Functor.{u v u v} C C :=
 {
-    parent := PreMonoidalCategoryOfTypes,
-    associator_transformation := {
-      components := λ p, λ t, (t.1.1,(t.1.2, t.2)),
-      naturality := ♮
-    },
-    pentagon := ♮
+  onObjects := λ X, C^.tensorObjects Z X,
+  onMorphisms := λ X Y f, C^.tensorMorphisms (C^.identity Z) f,
+  identities := begin
+                  blast,
+                  rewrite Functor.identities (C^.tensor),
+                end,
+  functoriality := begin
+                      intros,
+                      assert h : @Category.compose C = @MonoidalCategory.compose C, blast,
+                      unfold MonoidalCategory.tensorMorphisms,
+                      rewrite h,
+                      rewrite - C^.interchange,
+                      assert i : @Category.identity C = @MonoidalCategory.identity C, blast,
+                      rewrite - i,
+                      rewrite - h,
+                      rewrite C^.left_identity
+                    end
 }

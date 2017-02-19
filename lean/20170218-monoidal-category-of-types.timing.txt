@@ -1,0 +1,89 @@
+To extend, or not to extend...?
+
+I've been having some trouble recently with long compile times in my
+development of basic category theory. I see the most severe problems when I
+have a sequence of structures, each extending the previous one.
+
+As a result, I've tried an experiment in which I've implemented in two
+different ways a definition of a monoidal category, and shown that types form
+a monoidal category.
+
+The tl;dr of this post is: "Avoiding the use of `extends` seems to result in
+much faster compile times (3 minutes instead of 10 minutes), but requires
+writing some ugly proofs."
+
+You can see my two complete examples at
+
+    <https://gist.github.com/semorrison/6e6ca0540d0b0168abdba72735dd64d6/87ac8d127ee5e79a48d4a32497087f573bb569c6>
+
+(with extends) and 
+
+    <https://gist.github.com/semorrison/6e6ca0540d0b0168abdba72735dd64d6/e8f08f06b0a310ee43fbf991bbd1bbfeefb3f367>
+
+(without extends). If it's helpful the diff is at
+
+    <https://gist.github.com/semorrison/6e6ca0540d0b0168abdba72735dd64d6/revisions>
+
+The first way uses the `extends` keyword, defining a chain
+
+	  structure Category := ...
+	  structure PreMonoidalCategory extends Category := ...
+	  structure MonoidalCategory extends PreMonoidalCategory := ...
+
+The second uses nesting, as in
+
+	  structure Category := ...
+	  structure PreMonoidalCategory := {
+	    ( category : Category )
+	    ...
+	  }
+	  structure MonoidalCategory := {
+	    ( parent : PreMonoidalCategory )
+	    ...
+	  }
+
+In order to make the nested structure usable, I then define lots of 'synthetic
+fields' on the later structures, e.g.
+
+	  @[reducible] definition MonoidalCategory.Obj ( C : MonoidalCategory ) := @PreMonoidalCategory.Obj C^.parent
+
+This is a bit tedious, but Leo promises that this sort of thing can be cleanly
+handled via meta-programming. :-)
+
+Now, the "extends" version takes a _very_ long time to compile; 10 minutes on
+my computer, and this is just unusable. (Of course, in our real library this
+file is split up into lots of individual pieces, so incremental compilation
+makes life better, but it's still very annoying if you tweak something at the
+bottom of the hierarchy then have to wait 10 minutes before you can work on
+the top of the hierarchy again!)
+
+Fortunately the "nested" version is a bit faster; 3 minutes on my computer.
+This is still pretty much unusable, but at least better. Unfortunately, while
+the actual definition of a MonoidalCategory, and showing that Types form a
+MonoidalCategory, is pretty reasonable in either setup, proving things about
+monoidal categories is unpleasant in the nested version.
+
+This is essentially because we have _both_ coercions undoing the nesting,
+_and_ synthetic fields, and it's not immediately obvious that for C:
+MonoidalCategory, `C^.parent^.left_identity` and `(lift_t C)^.left_identity`
+are the same thing. To demonstrate this, in both files I've given a proof that
+tensoring on the left with a fixed object is a functor from C to C. You can
+see that in the "extends" version, this proceeds cleanly, while in the
+"nested" version we have to manually fix these problems over and over again.
+
+(Thanks to anyone still reading!)
+
+Questions:
+
+1) Am I missing something that would dramatically speed up compilation time in
+either development?
+
+2) If not, should I conclude from this that Lean's default extension mechanism
+is unsuited for complicated developments?
+
+3) If I'm going to have to switch to the nested model, are there good ways to
+handle the ambiguity described above?
+
+best regards,
+Scott Morrison
+

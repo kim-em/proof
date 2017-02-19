@@ -8,22 +8,33 @@ def pointwise_attribute : user_attribute := {
 
 run_command attribute.register `pointwise_attribute
 
+def pointwise_2_attribute : user_attribute := {
+  name := `pointwise_2,
+  descr := "A lemma that proves things are equal using the fact they are pointwise equal, generating two subgoals."
+}
+
+run_command attribute.register `pointwise_2_attribute
+
 /- Try to apply one of the given lemas, it succeeds if one of them succeeds. -/
 meta def any_apply : list name → tactic unit
 | []      := failed
 | (c::cs) := (mk_const c >>= fapply) <|> any_apply cs
 
-meta def smt   : tactic unit := using_smt $ intros >> add_lemmas_from_facts >> try ematch >> try simp
+meta def smt_simp        : tactic unit := using_smt $ intros >> try simp
+meta def smt_ematch : tactic unit := using_smt $ intros >> add_lemmas_from_facts >> try ematch
 
 meta def pointwise (and_then : tactic unit) : tactic unit :=
 do cs ← attribute.get_instances `pointwise,
    try (any_apply cs >> and_then)
 
+meta def pointwise_2 (and_then : tactic unit) : tactic unit :=
+do cs ← attribute.get_instances `pointwise_2,
+   try (any_apply cs >> repeat_at_most 2 and_then)
+
 attribute [pointwise] funext
 
-meta def blast : tactic unit := smt >> pointwise (repeat_at_most 2 blast) -- pointwise equality of functors creates two goals
+meta def blast        : tactic unit := smt_simp >> pointwise blast >> pointwise_2 blast -- pointwise equality of functors creates two goals
 
--- In a timing test on 2017-02-18, I found that using `abstract { blast }` instead of just `blast` resulted in a 5x speed-up!
 notation `♮` := by abstract { blast }
 
 @[pointwise] lemma {u v} pair_equality {α : Type u} {β : Type v} { X: α × β }: (X^.fst, X^.snd) = X := begin induction X, blast end
@@ -32,9 +43,8 @@ notation `♮` := by abstract { blast }
 attribute [pointwise] subtype.eq
 
 def {u} auto_cast {α β : Type u} {h : α = β} (a : α) := cast h a
-@[simp] lemma {u} auto_cast_identity {α : Type u} (a : α) : @auto_cast α α ♮ a = a := ♮
-notation `⟦` p `⟧` := @auto_cast _ _ ♮ p
-
+@[simp] lemma {u} auto_cast_identity {α : Type u} (a : α) : @auto_cast α α (by smt_ematch) a = a := ♮
+notation `⟦` p `⟧` := @auto_cast _ _ (by smt_ematch) p
 universe variables u v
 
 structure Category :=
@@ -180,23 +190,22 @@ definition whisker_on_right
   NaturalTransformation (FunctorComposition F H) (FunctorComposition G H) :=
   horizontal_composition_of_NaturalTransformations α (IdentityNaturalTransformation H)
 
-@[reducible] definition ProductCategory (C : Category.{u1 v1}) (D : Category.{u2 v2}) :
-  Category :=
-  {
-    Obj      := C^.Obj × D^.Obj,
-    Hom      := (λ X Y : C^.Obj × D^.Obj, C^.Hom (X^.fst) (Y^.fst) × D^.Hom (X^.snd) (Y^.snd)),
-    identity := λ X, (C^.identity (X^.fst), D^.identity (X^.snd)),
-    compose  := λ _ _ _ f g, (C^.compose (f^.fst) (g^.fst), D^.compose (f^.snd) (g^.snd)),
+@[reducible] definition ProductCategory (C : Category.{u1 v1}) (D : Category.{u2 v2}) : Category :=
+{
+  Obj      := C^.Obj × D^.Obj,
+  Hom      := (λ X Y : C^.Obj × D^.Obj, C^.Hom (X^.fst) (Y^.fst) × D^.Hom (X^.snd) (Y^.snd)),
+  identity := λ X, (C^.identity (X^.fst), D^.identity (X^.snd)),
+  compose  := λ _ _ _ f g, (C^.compose (f^.fst) (g^.fst), D^.compose (f^.snd) (g^.snd)),
 
-    left_identity  := ♮,
-    right_identity := ♮,
-    associativity  := begin
-                        blast,
-                        begin[smt]
-                          eblast_using [ Category.associativity ]
-                        end
+  left_identity  := ♮,
+  right_identity := ♮,
+  associativity  := begin
+                      blast,
+                      begin[smt]
+                        eblast_using [ Category.associativity ]
                       end
-  }
+                    end
+}
 
 namespace ProductCategory
   notation C `×` D := ProductCategory C D
@@ -266,8 +275,6 @@ definition right_associated_triple_tensor ( C : PreMonoidalCategory.{ u v } ) : 
     (left_associated_triple_tensor C) 
     (FunctorComposition (ProductCategoryAssociator C C C) (right_associated_triple_tensor C))
 
----- 1m36s compilation time, removing all mention of pentagons
-
 definition pentagon_3step_1 { C : PreMonoidalCategory.{ u v } } ( α : Associator.{ u v } C ) :=
   whisker_on_right
     (α × IdentityNaturalTransformation (IdentityFunctor C))
@@ -284,7 +291,7 @@ definition pentagon_3step_3 { C : PreMonoidalCategory.{ u v } } ( α : Associato
   whisker_on_left
     (FunctorComposition
       (ProductCategoryAssociator C C C × IdentityFunctor C)
-      (ProductCategoryAssociator C (↑C × ↑C) C))
+      (ProductCategoryAssociator C (C × C) C))
     (whisker_on_right
       (IdentityNaturalTransformation (IdentityFunctor C) × α)
       C^.tensor)
@@ -304,8 +311,8 @@ definition pentagon_2step_1 { C : PreMonoidalCategory.{ u v } } ( α : Associato
 definition pentagon_2step_2 { C : PreMonoidalCategory.{ u v } } ( α : Associator.{ u v } C ) :=
   whisker_on_left
     (FunctorComposition
-      (ProductCategoryAssociator (↑C × ↑C) C C)
-      (IdentityFunctor (↑C × ↑C) × C^.tensor))
+      (ProductCategoryAssociator (C × C) C C)
+      (IdentityFunctor (C × C) × C^.tensor))
     α
 
 definition pentagon_2step { C : PreMonoidalCategory.{ u v } } ( α : Associator.{ u v } C ) :=
@@ -321,18 +328,49 @@ structure MonoidalCategory
 instance MonoidalCategory_coercion : has_coe MonoidalCategory.{u v} PreMonoidalCategory.{u v} :=
   ⟨MonoidalCategory.to_PreMonoidalCategory⟩
 
-definition MonoidalCategoryOfTypes : MonoidalCategory :=
+@[reducible] definition MonoidalCategory.tensorObjects   ( C : MonoidalCategory ) ( X Y : C^.Obj ) : C^.Obj := C^.tensor (X, Y)
+@[reducible] definition MonoidalCategory.tensorMorphisms ( C : MonoidalCategory ) { W X Y Z : C^.Obj } ( f : C^.Hom W X ) ( g : C^.Hom Y Z ) : C^.Hom (C^.tensor (W, Y)) (C^.tensor (X, Z)) := C^.tensor^.onMorphisms (f, g)
+
+@[reducible] definition MonoidalCategory.interchange
+  ( C : MonoidalCategory )
+  { U V W X Y Z: C^.Obj }
+  ( f : C^.Hom U V )( g : C^.Hom V W )( h : C^.Hom X Y )( k : C^.Hom Y Z ) : 
+  @Functor.onMorphisms _ _ C^.tensor (U, X) (W, Z) ((C^.compose f g), (C^.compose h k)) = C^.compose (@Functor.onMorphisms _ _ C^.tensor (U, X) (V, Y) (f, h)) (@Functor.onMorphisms _ _ C^.tensor (V, Y) (W, Z) (g, k)) :=
+  @Functor.functoriality (C × C) C C^.tensor (U, X) (V, Y) (W, Z) (f, h) (g, k)
+
+
+definition TensorProductOfTypes : TensorProduct CategoryOfTypes := 
+{
+  onObjects     := λ p, prod p.1 p.2,
+  onMorphisms   := λ _ _ p, λ q, (p.1 q.1, p.2 q.2),
+  identities    := ♮,
+  functoriality := ♮
+}
+
+definition MonoidalCategoryOfTypes : MonoidalCategory := 
 {
   CategoryOfTypes with
-  tensor := {
-    onObjects     := λ p, prod p.1 p.2,
-    onMorphisms   := λ _ _ p, λ q, (p.1 q.1, p.2 q.2),
-    identities    := ♮,
-    functoriality := ♮
-  },
+  tensor := TensorProductOfTypes,
   associator_transformation := {
     components := λ p, λ t, (t.1.1,(t.1.2, t.2)),
     naturality := ♮
   },
-  pentagon := ♮ ---- 2m50s compilation time with `pentagon := sorry`, 10m50s compilation time with `pentagon := ♮`.
+  pentagon := ♮
+}
+
+local attribute [reducible] lift_t coe_t coe_b
+
+definition tensor_on_left { C: MonoidalCategory.{u v} } ( Z: C^.Obj ) : Functor.{u v u v} C C :=
+{
+  onObjects := λ X, C^.tensorObjects Z X,
+  onMorphisms := λ X Y f, C^.tensorMorphisms (C^.identity Z) f,
+  identities := begin
+                  blast,
+                  rewrite Functor.identities (C^.tensor),                
+                end,
+  functoriality := begin
+                      blast,
+                      rewrite - C^.interchange,
+                      rewrite C^.left_identity
+                    end
 }
