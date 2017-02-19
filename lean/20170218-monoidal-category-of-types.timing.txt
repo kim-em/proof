@@ -9,7 +9,7 @@ different ways a definition of a monoidal category, and shown that types form
 a monoidal category.
 
 The tl;dr of this post is: "Avoiding the use of `extends` seems to result in
-much faster compile times (3 minutes instead of 10 minutes), but requires
+much faster compile times (1.5 minutes instead of 3 minutes), but requires
 writing some ugly proofs."
 
 You can see my two complete examples at
@@ -50,14 +50,14 @@ fields' on the later structures, e.g.
 This is a bit tedious, but Leo promises that this sort of thing can be cleanly
 handled via meta-programming. :-)
 
-Now, the "extends" version takes a _very_ long time to compile; 10 minutes on
+Now, the "extends" version takes a _very_ long time to compile; 3 minutes on
 my computer, and this is just unusable. (Of course, in our real library this
 file is split up into lots of individual pieces, so incremental compilation
 makes life better, but it's still very annoying if you tweak something at the
-bottom of the hierarchy then have to wait 10 minutes before you can work on
+bottom of the hierarchy then have to wait 3 minutes before you can work on
 the top of the hierarchy again!)
 
-Fortunately the "nested" version is a bit faster; 3 minutes on my computer.
+Fortunately the "nested" version is a bit faster; 1.5 minutes on my computer.
 This is still pretty much unusable, but at least better. Unfortunately, while
 the actual definition of a MonoidalCategory, and showing that Types form a
 MonoidalCategory, is pretty reasonable in either setup, proving things about
