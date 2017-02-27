@@ -284,55 +284,18 @@ definition right_associated_triple_tensor ( C : PreMonoidalCategory.{ u v } ) : 
     (left_associated_triple_tensor C) 
     (FunctorComposition (ProductCategoryAssociator C C C) (right_associated_triple_tensor C))
 
-definition pentagon_3step_1 { C : PreMonoidalCategory.{ u v } } ( α : Associator.{ u v } C ) :=
-  whisker_on_right
-    (α × IdentityNaturalTransformation (IdentityFunctor C))
-    C^.tensor
+@[reducible] definition PreMonoidalCategory.tensorMorphisms ( C : PreMonoidalCategory ) { W X Y Z : C^.Obj } ( f : C^.Hom W X ) ( g : C^.Hom Y Z ) : C^.Hom (C^.tensor (W, Y)) (C^.tensor (X, Z)) := C^.tensor^.onMorphisms (f, g)
 
-definition pentagon_3step_2 { C : PreMonoidalCategory.{ u v } } ( α : Associator.{ u v } C ) :=
-  whisker_on_left
-    (FunctorComposition
-      (ProductCategoryAssociator C C C × IdentityFunctor C)
-      ((IdentityFunctor C × C^.tensor) × IdentityFunctor C))
-    α
-
-definition pentagon_3step_3 { C : PreMonoidalCategory.{ u v } } ( α : Associator.{ u v } C ) :=
-  whisker_on_left
-    (FunctorComposition
-      (ProductCategoryAssociator C C C × IdentityFunctor C)
-      (ProductCategoryAssociator C (C × C) C))
-    (whisker_on_right
-      (IdentityNaturalTransformation (IdentityFunctor C) × α)
-      C^.tensor)
-
-definition pentagon_3step { C : PreMonoidalCategory.{ u v } } ( α : Associator.{ u v } C ) :=
-  vertical_composition_of_NaturalTransformations
-    (vertical_composition_of_NaturalTransformations
-      (pentagon_3step_1 α)
-      (pentagon_3step_2 α))
-    (pentagon_3step_3 α)
-
-definition pentagon_2step_1 { C : PreMonoidalCategory.{ u v } } ( α : Associator.{ u v } C ) :=
-  whisker_on_left
-    ((C^.tensor × IdentityFunctor C) × IdentityFunctor C)
-    α
-
-definition pentagon_2step_2 { C : PreMonoidalCategory.{ u v } } ( α : Associator.{ u v } C ) :=
-  whisker_on_left
-    (FunctorComposition
-      (ProductCategoryAssociator (C × C) C C)
-      (IdentityFunctor (C × C) × C^.tensor))
-    α
-
-definition pentagon_2step { C : PreMonoidalCategory.{ u v } } ( α : Associator.{ u v } C ) :=
-  vertical_composition_of_NaturalTransformations
-    (pentagon_2step_1 α)
-    (pentagon_2step_2 α)
+@[reducible] definition Pentagon { C: PreMonoidalCategory } ( associator : Associator C ) :=
+  let α ( X Y Z : C^.Obj ) := associator ((X, Y), Z) in
+  ∀ W X Y Z : C^.Obj, 
+    C^.compose (α (W ⊗ X) Y Z) (α W X (Y ⊗ Z))
+  = C^.compose (C^.compose (C^.tensorMorphisms (α W X Y) (C^.identity Z)) (α W (X ⊗ Y) Z)) (C^.tensorMorphisms (C^.identity W) (α X Y Z)) 
 
 structure MonoidalCategory :=
   (parent : PreMonoidalCategory)
   (associator_transformation : Associator parent)
-  (pentagon   : pentagon_3step associator_transformation = pentagon_2step associator_transformation)
+  (pentagon                  : Pentagon associator_transformation)
 
 instance MonoidalCategory_coercion : has_coe MonoidalCategory.{u v} PreMonoidalCategory.{u v} :=
   ⟨MonoidalCategory.parent⟩
@@ -357,31 +320,31 @@ instance MonoidalCategory_coercion : has_coe MonoidalCategory.{u v} PreMonoidalC
   @Functor.onMorphisms _ _ C^.tensor (U, X) (W, Z) ((C^.compose f g), (C^.compose h k)) = C^.compose (@Functor.onMorphisms _ _ C^.tensor (U, X) (V, Y) (f, h)) (@Functor.onMorphisms _ _ C^.tensor (V, Y) (W, Z) (g, k)) :=
   @Functor.functoriality (C × C) C C^.tensor (U, X) (V, Y) (W, Z) (f, h) (g, k)
 
--- definition TensorProductOfTypes : TensorProduct CategoryOfTypes := 
--- {
---   onObjects     := λ p, prod p.1 p.2,
---   onMorphisms   := λ _ _ p, λ q, (p.1 q.1, p.2 q.2),
---   identities    := ♮,
---   functoriality := ♮
--- }
+definition TensorProductOfTypes : TensorProduct CategoryOfTypes := 
+{
+  onObjects     := λ p, prod p.1 p.2,
+  onMorphisms   := λ _ _ p, λ q, (p.1 q.1, p.2 q.2),
+  identities    := ♮,
+  functoriality := ♮
+}
 
--- definition PreMonoidalCategoryOfTypes : PreMonoidalCategory := 
--- {
---   category := CategoryOfTypes,
---   tensor := TensorProductOfTypes
--- }
+definition PreMonoidalCategoryOfTypes : PreMonoidalCategory := 
+{
+  category := CategoryOfTypes,
+  tensor := TensorProductOfTypes
+}
 
--- definition TypeAssociator : Associator PreMonoidalCategoryOfTypes := 
--- {
---   components := λ p, λ t, (t.1.1,(t.1.2, t.2)),
---   naturality := ♮
--- }
+definition TypeAssociator : Associator PreMonoidalCategoryOfTypes := 
+{
+  components := λ p, λ t, (t.1.1,(t.1.2, t.2)),
+  naturality := ♮
+}
 
--- definition MonoidalCategoryOfTypes : MonoidalCategory := {
---   parent := PreMonoidalCategoryOfTypes,
---   associator_transformation := TypeAssociator,
---   pentagon := ♮
--- }
+definition MonoidalCategoryOfTypes : MonoidalCategory := {
+  parent := PreMonoidalCategoryOfTypes,
+  associator_transformation := TypeAssociator,
+  pentagon := ♮
+}
 
 local attribute [reducible] lift_t coe_t coe_b
 
