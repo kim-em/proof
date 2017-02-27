@@ -8,13 +8,6 @@ def pointwise_attribute : user_attribute := {
 
 run_command attribute.register `pointwise_attribute
 
-def pointwise_2_attribute : user_attribute := {
-  name := `pointwise_2,
-  descr := "A lemma that proves things are equal using the fact they are pointwise equal, generating two subgoals."
-}
-
-run_command attribute.register `pointwise_2_attribute
-
 /- Try to apply one of the given lemas, it succeeds if one of them succeeds. -/
 meta def any_apply : list name → tactic unit
 | []      := failed
@@ -25,15 +18,11 @@ meta def smt_ematch : tactic unit := using_smt $ intros >> add_lemmas_from_facts
 
 meta def pointwise (and_then : tactic unit) : tactic unit :=
 do cs ← attribute.get_instances `pointwise,
-   try (any_apply cs >> and_then)
-
-meta def pointwise_2 (and_then : tactic unit) : tactic unit :=
-do cs ← attribute.get_instances `pointwise_2,
-   try (any_apply cs >> repeat_at_most 2 and_then)
+   try (seq (any_apply cs) and_then)
 
 attribute [pointwise] funext
 
-meta def blast        : tactic unit := smt_simp >> pointwise blast >> pointwise_2 blast -- pointwise equality of functors creates two goals
+meta def blast : tactic unit := smt_simp >> pointwise blast
 
 notation `♮` := by abstract { blast }
 
@@ -49,7 +38,7 @@ universe variables u v
 
 structure Category :=
   (Obj : Type u)
-  (Hom : Obj → Obj → Type v) 
+  (Hom : Obj → Obj → Type v)
   (identity : Π X : Obj, Hom X X)
   (compose  : Π { X Y Z : Obj }, Hom X Y → Hom Y Z → Hom X Z)
 
@@ -61,7 +50,7 @@ structure Category :=
 attribute [simp] Category.left_identity
 attribute [simp] Category.right_identity
 
-@[reducible] definition CategoryOfTypes : Category := 
+@[reducible] definition CategoryOfTypes : Category :=
 {
     Obj := Type u,
     Hom := λ a b, a → b,
@@ -126,8 +115,8 @@ instance NaturalTransformation_to_components { C D : Category } { F G : Functor 
 
 -- We'll want to be able to prove that two natural transformations are equal if they are componentwise equal.
 @[pointwise] lemma NaturalTransformations_componentwise_equal
-  { C D : Category } 
-  { F G : Functor C D } 
+  { C D : Category }
+  { F G : Functor C D }
   ( α β : NaturalTransformation F G )
   ( w : ∀ X : C^.Obj, α X = β X ) : α = β :=
   begin
@@ -158,10 +147,10 @@ instance NaturalTransformation_to_components { C D : Category } { F G : Functor 
                   end
   }
 
-@[reducible] definition horizontal_composition_of_NaturalTransformations 
+@[reducible] definition horizontal_composition_of_NaturalTransformations
   { C D E : Category }
   { F G : Functor C D }
-  { H I : Functor D E } 
+  { H I : Functor D E }
   ( α : NaturalTransformation F G )
   ( β : NaturalTransformation H I ) : NaturalTransformation (FunctorComposition F H) (FunctorComposition G I) :=
   {
@@ -262,7 +251,7 @@ namespace PreMonoidalCategory
   notation f `⊗` g := (PreMonoidalCategory.tensor _)^.onMorphisms (f, g)
 end PreMonoidalCategory
 
-instance PreMonoidalCategory_coercion : has_coe PreMonoidalCategory Category := 
+instance PreMonoidalCategory_coercion : has_coe PreMonoidalCategory Category :=
   ⟨PreMonoidalCategory.category⟩
 
 -- Copying fields. TODO: automate
@@ -279,18 +268,18 @@ definition left_associated_triple_tensor ( C : PreMonoidalCategory.{ u v } ) : F
 definition right_associated_triple_tensor ( C : PreMonoidalCategory.{ u v } ) : Functor (C × (C × C)) C :=
   FunctorComposition (IdentityFunctor C × C^.tensor) C^.tensor
 
-@[reducible] definition Associator ( C : PreMonoidalCategory.{ u v } ) := 
-  NaturalTransformation 
-    (left_associated_triple_tensor C) 
+@[reducible] definition Associator ( C : PreMonoidalCategory.{ u v } ) :=
+  NaturalTransformation
+    (left_associated_triple_tensor C)
     (FunctorComposition (ProductCategoryAssociator C C C) (right_associated_triple_tensor C))
 
 @[reducible] definition PreMonoidalCategory.tensorMorphisms ( C : PreMonoidalCategory ) { W X Y Z : C^.Obj } ( f : C^.Hom W X ) ( g : C^.Hom Y Z ) : C^.Hom (C^.tensor (W, Y)) (C^.tensor (X, Z)) := C^.tensor^.onMorphisms (f, g)
 
 @[reducible] definition Pentagon { C: PreMonoidalCategory } ( associator : Associator C ) :=
   let α ( X Y Z : C^.Obj ) := associator ((X, Y), Z) in
-  ∀ W X Y Z : C^.Obj, 
+  ∀ W X Y Z : C^.Obj,
     C^.compose (α (W ⊗ X) Y Z) (α W X (Y ⊗ Z))
-  = C^.compose (C^.compose (C^.tensorMorphisms (α W X Y) (C^.identity Z)) (α W (X ⊗ Y) Z)) (C^.tensorMorphisms (C^.identity W) (α X Y Z)) 
+  = C^.compose (C^.compose (C^.tensorMorphisms (α W X Y) (C^.identity Z)) (α W (X ⊗ Y) Z)) (C^.tensorMorphisms (C^.identity W) (α X Y Z))
 
 structure MonoidalCategory :=
   (parent : PreMonoidalCategory)
@@ -316,11 +305,11 @@ instance MonoidalCategory_coercion : has_coe MonoidalCategory.{u v} PreMonoidalC
 @[reducible] definition MonoidalCategory.interchange
   ( C : MonoidalCategory )
   { U V W X Y Z: C^.Obj }
-  ( f : C^.Hom U V )( g : C^.Hom V W )( h : C^.Hom X Y )( k : C^.Hom Y Z ) : 
+  ( f : C^.Hom U V )( g : C^.Hom V W )( h : C^.Hom X Y )( k : C^.Hom Y Z ) :
   @Functor.onMorphisms _ _ C^.tensor (U, X) (W, Z) ((C^.compose f g), (C^.compose h k)) = C^.compose (@Functor.onMorphisms _ _ C^.tensor (U, X) (V, Y) (f, h)) (@Functor.onMorphisms _ _ C^.tensor (V, Y) (W, Z) (g, k)) :=
   @Functor.functoriality (C × C) C C^.tensor (U, X) (V, Y) (W, Z) (f, h) (g, k)
 
-definition TensorProductOfTypes : TensorProduct CategoryOfTypes := 
+definition TensorProductOfTypes : TensorProduct CategoryOfTypes :=
 {
   onObjects     := λ p, prod p.1 p.2,
   onMorphisms   := λ _ _ p, λ q, (p.1 q.1, p.2 q.2),
@@ -328,13 +317,13 @@ definition TensorProductOfTypes : TensorProduct CategoryOfTypes :=
   functoriality := ♮
 }
 
-definition PreMonoidalCategoryOfTypes : PreMonoidalCategory := 
+definition PreMonoidalCategoryOfTypes : PreMonoidalCategory :=
 {
   category := CategoryOfTypes,
   tensor := TensorProductOfTypes
 }
 
-definition TypeAssociator : Associator PreMonoidalCategoryOfTypes := 
+definition TypeAssociator : Associator PreMonoidalCategoryOfTypes :=
 {
   components := λ p, λ t, (t.1.1,(t.1.2, t.2)),
   naturality := ♮
