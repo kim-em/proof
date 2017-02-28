@@ -8,13 +8,6 @@ def pointwise_attribute : user_attribute := {
 
 run_command attribute.register `pointwise_attribute
 
-def pointwise_2_attribute : user_attribute := {
-  name := `pointwise_2,
-  descr := "A lemma that proves things are equal using the fact they are pointwise equal, generating two subgoals."
-}
-
-run_command attribute.register `pointwise_2_attribute
-
 /- Try to apply one of the given lemas, it succeeds if one of them succeeds. -/
 meta def any_apply : list name → tactic unit
 | []      := failed
@@ -25,15 +18,11 @@ meta def smt_ematch : tactic unit := using_smt $ intros >> add_lemmas_from_facts
 
 meta def pointwise (and_then : tactic unit) : tactic unit :=
 do cs ← attribute.get_instances `pointwise,
-   try (any_apply cs >> and_then)
-
-meta def pointwise_2 (and_then : tactic unit) : tactic unit :=
-do cs ← attribute.get_instances `pointwise_2,
-   try (any_apply cs >> repeat_at_most 2 and_then)
+   try (seq (any_apply cs) and_then)
 
 attribute [pointwise] funext
 
-meta def blast        : tactic unit := smt_simp >> pointwise blast >> pointwise_2 blast -- pointwise equality of functors creates two goals
+meta def blast        : tactic unit := smt_simp >> pointwise blast
 
 notation `♮` := by abstract { blast }
 
@@ -260,14 +249,7 @@ structure PreMonoidalCategory
 instance PreMonoidalCategory_coercion : has_coe PreMonoidalCategory Category := 
   ⟨PreMonoidalCategory.to_Category⟩
 
-@[reducible] definition PreMonoidalCategory.tensorObjects   ( C : PreMonoidalCategory ) ( X Y : C^.Obj ) : C^.Obj := C^.tensor (X, Y)
 @[reducible] definition PreMonoidalCategory.tensorMorphisms ( C : PreMonoidalCategory ) { W X Y Z : C^.Obj } ( f : C^.Hom W X ) ( g : C^.Hom Y Z ) : C^.Hom (C^.tensor (W, Y)) (C^.tensor (X, Z)) := C^.tensor^.onMorphisms (f, g)
-@[reducible] definition PreMonoidalCategory.interchange
-  ( C : PreMonoidalCategory )
-  { U V W X Y Z: C^.Obj }
-  ( f : C^.Hom U V )( g : C^.Hom V W )( h : C^.Hom X Y )( k : C^.Hom Y Z ) : 
-  @Functor.onMorphisms _ _ C^.tensor (U, X) (W, Z) ((C^.compose f g), (C^.compose h k)) = C^.compose (@Functor.onMorphisms _ _ C^.tensor (U, X) (V, Y) (f, h)) (@Functor.onMorphisms _ _ C^.tensor (V, Y) (W, Z) (g, k)) :=
-  @Functor.functoriality (C × C) C C^.tensor (U, X) (V, Y) (W, Z) (f, h) (g, k)
 
 @[reducible] definition left_associated_triple_tensor ( C : PreMonoidalCategory.{ u v } ) : Functor ((C × C) × C) C :=
   FunctorComposition (C^.tensor × IdentityFunctor C) C^.tensor
@@ -348,13 +330,13 @@ definition tensor_on_left { C: MonoidalCategory.{u v} } ( Z: C^.Obj ) : Functor.
                     end
 }
 
-@[reducible] definition pentagon_3step_1 ( C : MonoidalCategory.{ u v } ) :=
+definition pentagon_3step_1 ( C : MonoidalCategory.{ u v } ) :=
   let α := C^.associator_transformation in
   whisker_on_right
     (α × IdentityNaturalTransformation (IdentityFunctor C))
     C^.tensor
 
-@[reducible] definition pentagon_3step_2 ( C : MonoidalCategory.{ u v } ) :=
+definition pentagon_3step_2 ( C : MonoidalCategory.{ u v } ) :=
   let α := C^.associator_transformation in
   whisker_on_left
     (FunctorComposition
@@ -362,7 +344,7 @@ definition tensor_on_left { C: MonoidalCategory.{u v} } ( Z: C^.Obj ) : Functor.
       ((IdentityFunctor C × C^.tensor) × IdentityFunctor C))
     α
 
-@[reducible] definition pentagon_3step_3 ( C : MonoidalCategory.{ u v } ) :=
+definition pentagon_3step_3 ( C : MonoidalCategory.{ u v } ) :=
   let α := C^.associator_transformation in
   whisker_on_left
     (FunctorComposition
@@ -372,20 +354,20 @@ definition tensor_on_left { C: MonoidalCategory.{u v} } ( Z: C^.Obj ) : Functor.
       (IdentityNaturalTransformation (IdentityFunctor C) × α)
       C^.tensor)
 
-@[reducible] definition pentagon_3step ( C : MonoidalCategory.{ u v } ) :=
+definition pentagon_3step ( C : MonoidalCategory.{ u v } ) :=
   vertical_composition_of_NaturalTransformations
     (vertical_composition_of_NaturalTransformations
       (pentagon_3step_1 C)
       (pentagon_3step_2 C))
     (pentagon_3step_3 C)
 
-@[reducible] definition pentagon_2step_1 ( C : MonoidalCategory.{ u v } ) :=
+definition pentagon_2step_1 ( C : MonoidalCategory.{ u v } ) :=
   let α := C^.associator_transformation in
   whisker_on_left
     ((C^.tensor × IdentityFunctor C) × IdentityFunctor C)
     α
 
-@[reducible] definition pentagon_2step_2 ( C : MonoidalCategory.{ u v } ) :=
+definition pentagon_2step_2 ( C : MonoidalCategory.{ u v } ) :=
   let α := C^.associator_transformation in
   whisker_on_left
     (FunctorComposition
@@ -393,7 +375,7 @@ definition tensor_on_left { C: MonoidalCategory.{u v} } ( Z: C^.Obj ) : Functor.
       (IdentityFunctor (C × C) × C^.tensor))
     α
 
-@[reducible] definition pentagon_2step ( C : MonoidalCategory.{ u v } ) :=
+definition pentagon_2step ( C : MonoidalCategory.{ u v } ) :=
   vertical_composition_of_NaturalTransformations
     (pentagon_2step_1 C)
     (pentagon_2step_2 C)

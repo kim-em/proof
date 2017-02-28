@@ -8,13 +8,6 @@ def pointwise_attribute : user_attribute := {
 
 run_command attribute.register `pointwise_attribute
 
-def pointwise_2_attribute : user_attribute := {
-  name := `pointwise_2,
-  descr := "A lemma that proves things are equal using the fact they are pointwise equal, generating two subgoals."
-}
-
-run_command attribute.register `pointwise_2_attribute
-
 /- Try to apply one of the given lemas, it succeeds if one of them succeeds. -/
 meta def any_apply : list name → tactic unit
 | []      := failed
@@ -25,15 +18,11 @@ meta def smt_ematch : tactic unit := using_smt $ intros >> add_lemmas_from_facts
 
 meta def pointwise (and_then : tactic unit) : tactic unit :=
 do cs ← attribute.get_instances `pointwise,
-   try (any_apply cs >> and_then)
-
-meta def pointwise_2 (and_then : tactic unit) : tactic unit :=
-do cs ← attribute.get_instances `pointwise_2,
-   try (any_apply cs >> repeat_at_most 2 and_then)
+   try (seq (any_apply cs) and_then)
 
 attribute [pointwise] funext
 
-meta def blast        : tactic unit := smt_simp >> pointwise blast >> pointwise_2 blast -- pointwise equality of functors creates two goals
+meta def blast        : tactic unit := smt_simp >> pointwise blast
 
 notation `♮` := by abstract { blast }
 
@@ -358,8 +347,8 @@ definition tensor_on_left { C: MonoidalCategory.{u v} } ( Z: C^.Obj ) : Functor.
                 end,
   functoriality := begin
                       intros,
-                      assert h : @Category.compose C = @MonoidalCategory.compose C, blast,
                       unfold MonoidalCategory.tensorMorphisms,
+                      assert h : @Category.compose C = @MonoidalCategory.compose C, blast,
                       rewrite h,
                       rewrite - C^.interchange,
                       assert i : @Category.identity C = @MonoidalCategory.identity C, blast,

@@ -45,7 +45,8 @@ The second uses nesting, as in
 In order to make the nested structure usable, I then define lots of 'synthetic
 fields' on the later structures, e.g.
 
-	  @[reducible] definition MonoidalCategory.Obj ( C : MonoidalCategory ) := @PreMonoidalCategory.Obj C^.parent
+	  @[reducible] definition MonoidalCategory.Obj ( C : MonoidalCategory ) := 
+	      @PreMonoidalCategory.Obj C^.parent
 
 This is a bit tedious, but Leo promises that this sort of thing can be cleanly
 handled via meta-programming. :-)
