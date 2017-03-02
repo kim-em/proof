@@ -163,7 +163,7 @@ instance NaturalTransformation_to_components { C D : Category } { F G : Functor 
                   end
   }
 
-definition whisker_on_left
+@[reducible] definition whisker_on_left
   { C D E : Category }
   ( F : Functor C D )
   { G H : Functor D E }
@@ -171,7 +171,7 @@ definition whisker_on_left
   NaturalTransformation (FunctorComposition F G) (FunctorComposition F H) :=
   horizontal_composition_of_NaturalTransformations (IdentityNaturalTransformation F) α
 
-definition whisker_on_right
+@[reducible] definition whisker_on_right
   { C D E : Category }
   { F G : Functor C D }
   ( α : NaturalTransformation F G )
@@ -212,7 +212,7 @@ namespace ProductFunctor
   notation F `×` G := ProductFunctor F G
 end ProductFunctor
 
-definition ProductNaturalTransformation { A B C D : Category } { F G : Functor A B } { H I : Functor C D } (α : NaturalTransformation F G) (β : NaturalTransformation H I) : NaturalTransformation (F × H) (G × I) :=
+@[reducible] definition ProductNaturalTransformation { A B C D : Category } { F G : Functor A B } { H I : Functor C D } (α : NaturalTransformation F G) (β : NaturalTransformation H I) : NaturalTransformation (F × H) (G × I) :=
 {
   components := λ X, (α X^.fst, β X^.snd),
   naturality :=
@@ -228,7 +228,7 @@ namespace ProductNaturalTransformation
   notation α `×` β := ProductNaturalTransformation α β
 end ProductNaturalTransformation
 
-definition ProductCategoryAssociator
+@[reducible] definition ProductCategoryAssociator
   ( C : Category.{ u1 v1 } )
   ( D : Category.{ u2 v2 } )
   ( E : Category.{ u3 v3 } )
@@ -246,26 +246,14 @@ structure PreMonoidalCategory
   extends carrier : Category :=
   (tensor : TensorProduct carrier)
 
-namespace PreMonoidalCategory
-  notation X `⊗` Y := (PreMonoidalCategory.tensor _)^.onObjects (X, Y)
-  notation f `⊗` g := (PreMonoidalCategory.tensor _)^.onMorphisms (f, g)
-end PreMonoidalCategory
-
 instance PreMonoidalCategory_coercion : has_coe PreMonoidalCategory Category :=
   ⟨PreMonoidalCategory.to_Category⟩
 
-@[reducible] definition PreMonoidalCategory.tensorObjects   ( C : PreMonoidalCategory ) ( X Y : C^.Obj ) : C^.Obj := C^.tensor (X, Y)
 @[reducible] definition PreMonoidalCategory.tensorMorphisms ( C : PreMonoidalCategory ) { W X Y Z : C^.Obj } ( f : C^.Hom W X ) ( g : C^.Hom Y Z ) : C^.Hom (C^.tensor (W, Y)) (C^.tensor (X, Z)) := C^.tensor^.onMorphisms (f, g)
-@[reducible] definition PreMonoidalCategory.interchange
-  ( C : PreMonoidalCategory )
-  { U V W X Y Z: C^.Obj }
-  ( f : C^.Hom U V )( g : C^.Hom V W )( h : C^.Hom X Y )( k : C^.Hom Y Z ) :
-  @Functor.onMorphisms _ _ C^.tensor (U, X) (W, Z) ((C^.compose f g), (C^.compose h k)) = C^.compose (@Functor.onMorphisms _ _ C^.tensor (U, X) (V, Y) (f, h)) (@Functor.onMorphisms _ _ C^.tensor (V, Y) (W, Z) (g, k)) :=
-  @Functor.functoriality (C × C) C C^.tensor (U, X) (V, Y) (W, Z) (f, h) (g, k)
 
-definition left_associated_triple_tensor ( C : PreMonoidalCategory.{ u v } ) : Functor ((C × C) × C) C :=
+@[reducible] definition left_associated_triple_tensor ( C : PreMonoidalCategory.{ u v } ) : Functor ((C × C) × C) C :=
   FunctorComposition (C^.tensor × IdentityFunctor C) C^.tensor
-definition right_associated_triple_tensor ( C : PreMonoidalCategory.{ u v } ) : Functor (C × (C × C)) C :=
+@[reducible] definition right_associated_triple_tensor ( C : PreMonoidalCategory.{ u v } ) : Functor (C × (C × C)) C :=
   FunctorComposition (IdentityFunctor C × C^.tensor) C^.tensor
 
 @[reducible] definition Associator ( C : PreMonoidalCategory.{ u v } ) :=
@@ -273,11 +261,15 @@ definition right_associated_triple_tensor ( C : PreMonoidalCategory.{ u v } ) : 
     (left_associated_triple_tensor C)
     (FunctorComposition (ProductCategoryAssociator C C C) (right_associated_triple_tensor C))
 
+-- @[reducible] definition Pentagon { C: PreMonoidalCategory } ( associator : Associator C ) :=
+--   ∀ W X Y Z : C^.Obj,
+--     C^.compose (associator (((C^.tensorObjects W X), Y), Z)) (associator ((W, X), (C^.tensorObjects Y Z)))
+--   = C^.compose (C^.compose (C^.tensorMorphisms (associator ((W, X), Y)) (C^.identity Z)) (associator ((W, (C^.tensorObjects X Y)), Z))) (C^.tensorMorphisms (C^.identity W) (associator ((X, Y), Z)))
+
 @[reducible] definition Pentagon { C: PreMonoidalCategory } ( associator : Associator C ) :=
-  let α ( X Y Z : C^.Obj ) := associator ((X, Y), Z) in
   ∀ W X Y Z : C^.Obj,
-    C^.compose (α (W ⊗ X) Y Z) (α W X (Y ⊗ Z))
-  = C^.compose (C^.compose (C^.tensorMorphisms (α W X Y) (C^.identity Z)) (α W (X ⊗ Y) Z)) (C^.tensorMorphisms (C^.identity W) (α X Y Z))
+    C^.compose (associator (((C^.tensor (W, X)), Y), Z)) (associator ((W, X), (C^.tensor (Y, Z))))
+  = C^.compose (C^.compose (C^.tensorMorphisms (associator ((W, X), Y)) (C^.identity Z)) (associator ((W, (C^.tensor (X, Y))), Z))) (C^.tensorMorphisms (C^.identity W) (associator ((X, Y), Z)))
 
 structure MonoidalCategory
   extends carrier : PreMonoidalCategory :=
@@ -332,13 +324,13 @@ definition tensor_on_left { C: MonoidalCategory.{u v} } ( Z: C^.Obj ) : Functor.
                     end
 }
 
-@[reducible] definition pentagon_3step_1 ( C : MonoidalCategory.{ u v } ) :=
+definition pentagon_3step_1 ( C : MonoidalCategory.{ u v } ) :=
   let α := C^.associator_transformation in
   whisker_on_right
     (α × IdentityNaturalTransformation (IdentityFunctor C))
     C^.tensor
 
-@[reducible] definition pentagon_3step_2 ( C : MonoidalCategory.{ u v } ) :=
+definition pentagon_3step_2 ( C : MonoidalCategory.{ u v } ) :=
   let α := C^.associator_transformation in
   whisker_on_left
     (FunctorComposition
@@ -346,7 +338,7 @@ definition tensor_on_left { C: MonoidalCategory.{u v} } ( Z: C^.Obj ) : Functor.
       ((IdentityFunctor C × C^.tensor) × IdentityFunctor C))
     α
 
-@[reducible] definition pentagon_3step_3 ( C : MonoidalCategory.{ u v } ) :=
+definition pentagon_3step_3 ( C : MonoidalCategory.{ u v } ) :=
   let α := C^.associator_transformation in
   whisker_on_left
     (FunctorComposition
@@ -356,20 +348,20 @@ definition tensor_on_left { C: MonoidalCategory.{u v} } ( Z: C^.Obj ) : Functor.
       (IdentityNaturalTransformation (IdentityFunctor C) × α)
       C^.tensor)
 
-@[reducible] definition pentagon_3step ( C : MonoidalCategory.{ u v } ) :=
+definition pentagon_3step ( C : MonoidalCategory.{ u v } ) :=
   vertical_composition_of_NaturalTransformations
     (vertical_composition_of_NaturalTransformations
       (pentagon_3step_1 C)
       (pentagon_3step_2 C))
     (pentagon_3step_3 C)
 
-@[reducible] definition pentagon_2step_1 ( C : MonoidalCategory.{ u v } ) :=
+definition pentagon_2step_1 ( C : MonoidalCategory.{ u v } ) :=
   let α := C^.associator_transformation in
   whisker_on_left
     ((C^.tensor × IdentityFunctor C) × IdentityFunctor C)
     α
 
-@[reducible] definition pentagon_2step_2 ( C : MonoidalCategory.{ u v } ) :=
+definition pentagon_2step_2 ( C : MonoidalCategory.{ u v } ) :=
   let α := C^.associator_transformation in
   whisker_on_left
     (FunctorComposition
@@ -377,7 +369,7 @@ definition tensor_on_left { C: MonoidalCategory.{u v} } ( Z: C^.Obj ) : Functor.
       (IdentityFunctor (C × C) × C^.tensor))
     α
 
-@[reducible] definition pentagon_2step ( C : MonoidalCategory.{ u v } ) :=
+definition pentagon_2step ( C : MonoidalCategory.{ u v } ) :=
   vertical_composition_of_NaturalTransformations
     (pentagon_2step_1 C)
     (pentagon_2step_2 C)
@@ -387,5 +379,11 @@ lemma pentagon_in_terms_of_natural_transformations
   pentagon_2step C = pentagon_3step C :=
   begin
     blast,
-    repeat { unfold whisker_on_right }
+    induction X with PQR S,
+    induction PQR with PQ R,
+    induction PQ with P Q,
+    dsimp,
+    pose p := C^.pentagon P Q R S,
+    simp at p,
+    exact sorry
   end
