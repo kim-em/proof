@@ -324,13 +324,13 @@ definition tensor_on_left { C: MonoidalCategory.{u v} } ( Z: C^.Obj ) : Functor.
                     end
 }
 
-definition pentagon_3step_1 ( C : MonoidalCategory.{ u v } ) :=
+@[reducible] definition pentagon_3step_1 ( C : MonoidalCategory.{ u v } ) :=
   let α := C^.associator_transformation in
   whisker_on_right
     (α × IdentityNaturalTransformation (IdentityFunctor C))
     C^.tensor
 
-definition pentagon_3step_2 ( C : MonoidalCategory.{ u v } ) :=
+@[reducible] definition pentagon_3step_2 ( C : MonoidalCategory.{ u v } ) :=
   let α := C^.associator_transformation in
   whisker_on_left
     (FunctorComposition
@@ -338,7 +338,7 @@ definition pentagon_3step_2 ( C : MonoidalCategory.{ u v } ) :=
       ((IdentityFunctor C × C^.tensor) × IdentityFunctor C))
     α
 
-definition pentagon_3step_3 ( C : MonoidalCategory.{ u v } ) :=
+@[reducible] definition pentagon_3step_3 ( C : MonoidalCategory.{ u v } ) :=
   let α := C^.associator_transformation in
   whisker_on_left
     (FunctorComposition
@@ -348,20 +348,20 @@ definition pentagon_3step_3 ( C : MonoidalCategory.{ u v } ) :=
       (IdentityNaturalTransformation (IdentityFunctor C) × α)
       C^.tensor)
 
-definition pentagon_3step ( C : MonoidalCategory.{ u v } ) :=
+@[reducible] definition pentagon_3step ( C : MonoidalCategory.{ u v } ) :=
   vertical_composition_of_NaturalTransformations
     (vertical_composition_of_NaturalTransformations
       (pentagon_3step_1 C)
       (pentagon_3step_2 C))
     (pentagon_3step_3 C)
 
-definition pentagon_2step_1 ( C : MonoidalCategory.{ u v } ) :=
+@[reducible] definition pentagon_2step_1 ( C : MonoidalCategory.{ u v } ) :=
   let α := C^.associator_transformation in
   whisker_on_left
     ((C^.tensor × IdentityFunctor C) × IdentityFunctor C)
     α
 
-definition pentagon_2step_2 ( C : MonoidalCategory.{ u v } ) :=
+@[reducible] definition pentagon_2step_2 ( C : MonoidalCategory.{ u v } ) :=
   let α := C^.associator_transformation in
   whisker_on_left
     (FunctorComposition
@@ -369,7 +369,7 @@ definition pentagon_2step_2 ( C : MonoidalCategory.{ u v } ) :=
       (IdentityFunctor (C × C) × C^.tensor))
     α
 
-definition pentagon_2step ( C : MonoidalCategory.{ u v } ) :=
+@[reducible] definition pentagon_2step ( C : MonoidalCategory.{ u v } ) :=
   vertical_composition_of_NaturalTransformations
     (pentagon_2step_1 C)
     (pentagon_2step_2 C)
@@ -378,12 +378,15 @@ lemma pentagon_in_terms_of_natural_transformations
   ( C : MonoidalCategory ) :
   pentagon_2step C = pentagon_3step C :=
   begin
-    blast,
+    blast, -- This just unfolds definitions and introduces variables
     induction X with PQR S,
     induction PQR with PQ R,
     induction PQ with P Q,
-    dsimp,
+    --dsimp, -- This does nothing right now
     pose p := C^.pentagon P Q R S,
     simp at p,
+    blast,
+    repeat { rewrite Functor.identities C^.tensor }, simp,
+    -- This is now missing some obvious applications of Category.{left,right}_identity, which would solve the problem
     exact sorry
   end
