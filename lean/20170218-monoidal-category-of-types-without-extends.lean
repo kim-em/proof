@@ -263,9 +263,9 @@ instance PreMonoidalCategory_coercion : has_coe PreMonoidalCategory Category :=
 @[reducible] definition PreMonoidalCategory.right_identity ( C : PreMonoidalCategory ) := @Category.right_identity C^.category
 @[reducible] definition PreMonoidalCategory.associativity  ( C : PreMonoidalCategory ) := @Category.associativity  C^.category
 
-definition left_associated_triple_tensor ( C : PreMonoidalCategory.{ u v } ) : Functor ((C × C) × C) C :=
+@[reducible] definition left_associated_triple_tensor ( C : PreMonoidalCategory.{ u v } ) : Functor ((C × C) × C) C :=
   FunctorComposition (C^.tensor × IdentityFunctor C) C^.tensor
-definition right_associated_triple_tensor ( C : PreMonoidalCategory.{ u v } ) : Functor (C × (C × C)) C :=
+@[reducible] definition right_associated_triple_tensor ( C : PreMonoidalCategory.{ u v } ) : Functor (C × (C × C)) C :=
   FunctorComposition (IdentityFunctor C × C^.tensor) C^.tensor
 
 @[reducible] definition Associator ( C : PreMonoidalCategory.{ u v } ) :=
@@ -412,11 +412,14 @@ lemma pentagon_in_terms_of_natural_transformations
   ( C : MonoidalCategory ) :
   pentagon_2step C = pentagon_3step C :=
   begin
-    blast,
+    blast, -- This just unfolds definitions and introduces variables
     induction X with PQR S,
     induction PQR with PQ R,
     induction PQ with P Q,
-    dsimp,
     pose p := C^.pentagon P Q R S,
-    exact sorry
+    blast, -- this simplifies the hypothesis p back to something reasonable
+    repeat { rewrite Functor.identities C^.tensor }, -- we shouldn't have to do this, as Functor.identities has [simp]
+    blast,                                           -- cleaning up mess...
+    repeat { rewrite C^.right_identity },            -- again, we shouldn't need to do these, Category.left_identity has [simp] too
+    repeat { rewrite C^.left_identity }
   end

@@ -382,11 +382,11 @@ lemma pentagon_in_terms_of_natural_transformations
     induction X with PQR S,
     induction PQR with PQ R,
     induction PQ with P Q,
-    --dsimp, -- This does nothing right now
     pose p := C^.pentagon P Q R S,
-    simp at p,
-    blast,
-    repeat { rewrite Functor.identities C^.tensor }, simp,
-    -- This is now missing some obvious applications of Category.{left,right}_identity, which would solve the problem
-    exact sorry
+    blast, -- this simplifies the hypothesis p back to something reasonable
+    repeat { rewrite Functor.identities C^.tensor }, -- we shouldn't have to do this, as Functor.identities has [simp]
+    blast,                                           -- cleaning up mess...
+    repeat { rewrite C^.right_identity },            -- again, we shouldn't need to do these, Category.left_identity has [simp] too
+    repeat { rewrite C^.left_identity },
+    exact p
   end
