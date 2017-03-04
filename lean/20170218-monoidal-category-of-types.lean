@@ -242,42 +242,32 @@ end ProductNaturalTransformation
 
 @[reducible] definition TensorProduct ( C: Category ) := Functor ( C × C ) C
 
-structure PreMonoidalCategory
-  extends carrier : Category :=
-  (tensor : TensorProduct carrier)
+@[reducible] definition left_associated_triple_tensor ( C : Category.{ u v } ) ( tensor : TensorProduct C ) : Functor ((C × C) × C) C :=
+  FunctorComposition (tensor × IdentityFunctor C) tensor
+@[reducible] definition right_associated_triple_tensor ( C : Category.{ u v } ) ( tensor : TensorProduct C ) : Functor (C × (C × C)) C :=
+  FunctorComposition (IdentityFunctor C × tensor) tensor
 
-instance PreMonoidalCategory_coercion : has_coe PreMonoidalCategory Category :=
-  ⟨PreMonoidalCategory.to_Category⟩
+@[reducible] definition Associator { C : Category.{ u v } } ( tensor : TensorProduct C ) := 
+  NaturalTransformation 
+    (left_associated_triple_tensor C tensor) 
+    (FunctorComposition (ProductCategoryAssociator C C C) (right_associated_triple_tensor C tensor))
 
-@[reducible] definition PreMonoidalCategory.tensorMorphisms ( C : PreMonoidalCategory ) { W X Y Z : C^.Obj } ( f : C^.Hom W X ) ( g : C^.Hom Y Z ) : C^.Hom (C^.tensor (W, Y)) (C^.tensor (X, Z)) := C^.tensor^.onMorphisms (f, g)
-
-@[reducible] definition left_associated_triple_tensor ( C : PreMonoidalCategory.{ u v } ) : Functor ((C × C) × C) C :=
-  FunctorComposition (C^.tensor × IdentityFunctor C) C^.tensor
-@[reducible] definition right_associated_triple_tensor ( C : PreMonoidalCategory.{ u v } ) : Functor (C × (C × C)) C :=
-  FunctorComposition (IdentityFunctor C × C^.tensor) C^.tensor
-
-@[reducible] definition Associator ( C : PreMonoidalCategory.{ u v } ) :=
-  NaturalTransformation
-    (left_associated_triple_tensor C)
-    (FunctorComposition (ProductCategoryAssociator C C C) (right_associated_triple_tensor C))
-
--- @[reducible] definition Pentagon { C: PreMonoidalCategory } ( associator : Associator C ) :=
---   ∀ W X Y Z : C^.Obj,
---     C^.compose (associator (((C^.tensorObjects W X), Y), Z)) (associator ((W, X), (C^.tensorObjects Y Z)))
---   = C^.compose (C^.compose (C^.tensorMorphisms (associator ((W, X), Y)) (C^.identity Z)) (associator ((W, (C^.tensorObjects X Y)), Z))) (C^.tensorMorphisms (C^.identity W) (associator ((X, Y), Z)))
-
-@[reducible] definition Pentagon { C: PreMonoidalCategory } ( associator : Associator C ) :=
-  ∀ W X Y Z : C^.Obj,
-    C^.compose (associator (((C^.tensor (W, X)), Y), Z)) (associator ((W, X), (C^.tensor (Y, Z))))
-  = C^.compose (C^.compose (C^.tensorMorphisms (associator ((W, X), Y)) (C^.identity Z)) (associator ((W, (C^.tensor (X, Y))), Z))) (C^.tensorMorphisms (C^.identity W) (associator ((X, Y), Z)))
+@[reducible] definition Pentagon { C : Category } { tensor : TensorProduct C } ( associator : Associator tensor ) :=
+  let α ( X Y Z : C^.Obj ) := associator ((X, Y), Z) in
+  let tensorObjects ( X Y : C^.Obj ) := tensor^.onObjects (X, Y) in
+  let tensorMorphisms { W X Y Z : C^.Obj } ( f : C^.Hom W X ) ( g : C^.Hom Y Z ) : C^.Hom (tensorObjects W Y) (tensorObjects X Z) := tensor^.onMorphisms (f, g) in
+  ∀ W X Y Z : C^.Obj, 
+    C^.compose (α (tensorObjects W X) Y Z) (α W X (tensorObjects Y Z))
+  = C^.compose (C^.compose (tensorMorphisms (α W X Y) (C^.identity Z)) (α W (tensorObjects X Y) Z)) (tensorMorphisms (C^.identity W) (α X Y Z)) 
 
 structure MonoidalCategory
-  extends carrier : PreMonoidalCategory :=
-  (associator_transformation : Associator carrier)
+  extends carrier : Category :=
+  (tensor                    : TensorProduct carrier)
+  (associator_transformation : Associator tensor)
   (pentagon                  : Pentagon associator_transformation)
 
-instance MonoidalCategory_coercion : has_coe MonoidalCategory.{u v} PreMonoidalCategory.{u v} :=
-  ⟨MonoidalCategory.to_PreMonoidalCategory⟩
+instance MonoidalCategory_coercion : has_coe MonoidalCategory.{u v} Category.{u v} :=
+  ⟨MonoidalCategory.to_Category⟩
 
 @[reducible] definition MonoidalCategory.tensorObjects   ( C : MonoidalCategory ) ( X Y : C^.Obj )                                           : C^.Obj := C^.tensor (X, Y)
 @[reducible] definition MonoidalCategory.tensorMorphisms ( C : MonoidalCategory ) { W X Y Z : C^.Obj } ( f : C^.Hom W X ) ( g : C^.Hom Y Z ) : C^.Hom (C^.tensor (W, Y)) (C^.tensor (X, Z)) := C^.tensor^.onMorphisms (f, g)

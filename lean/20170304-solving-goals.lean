@@ -1,7 +1,6 @@
 open tactic
-open smt_tactic
 
-notation `♮` := by abstract { using_smt $ intros >> try simp }
+notation `♮` := by abstract { begin intros, simp end }
 
 structure Monoid ( α : Type ) :=
   (one : α)
