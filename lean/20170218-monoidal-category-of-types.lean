@@ -364,19 +364,33 @@ definition tensor_on_left { C: MonoidalCategory.{u v} } ( Z: C^.Obj ) : Functor.
     (pentagon_2step_1 C)
     (pentagon_2step_2 C)
 
+-- lemma bifunctor_identities
+--   { C D E: Category }
+--   ( X : C^.Obj ) ( Y: D^.Obj )
+--   ( F : Functor (C × D) E )
+--    : @Functor.onMorphisms _ _ F (X,Y) (X,Y) (C^.identity X, D^.identity Y) = E^.identity (F^.onObjects (X, Y))
+--   := 
+--   begin
+--     rewrite F^.identities
+--   end
+
+-- adding these attributes increased compile time from 1.5 minutes to 13 minutes. :-(
+-- attribute [simp] MonoidalCategory.left_identity
+-- attribute [simp] MonoidalCategory.right_identity
+
 lemma pentagon_in_terms_of_natural_transformations
   ( C : MonoidalCategory ) :
   pentagon_2step C = pentagon_3step C :=
   begin
-    blast, -- This just unfolds definitions and introduces variables
+    blast, 
     induction X with PQR S,
     induction PQR with PQ R,
     induction PQ with P Q,
     pose p := C^.pentagon P Q R S,
-    blast, -- this simplifies the hypothesis p back to something reasonable
-    repeat { rewrite Functor.identities C^.tensor }, -- we shouldn't have to do this, as Functor.identities has [simp]
-    blast,                                           -- cleaning up mess...
-    repeat { rewrite C^.right_identity },            -- again, we shouldn't need to do these, Category.left_identity has [simp] too
-    repeat { rewrite C^.left_identity },
-    exact p
+    -- notice that the hypothesis p is gross, until we blast!
+    blast,
+    -- I don't understand why this isn't being done by blast automatically: Functor.identities has [simp].
+    -- Moreover, I don't understand why `rewrite bifunctor_identities` doesn't apply here.
+    repeat { rewrite C^.tensor^.identities <|> rewrite C^.left_identity <|> rewrite C^.right_identity },
+    blast
   end
