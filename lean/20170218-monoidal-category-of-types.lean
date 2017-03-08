@@ -13,7 +13,8 @@ meta def any_apply : list name → tactic unit
 | []      := failed
 | (c::cs) := (mk_const c >>= fapply) <|> any_apply cs
 
-meta def smt_simp        : tactic unit := using_smt $ intros >> try simp
+meta def smt_simp   : tactic unit := using_smt $ intros >> try simp
+meta def smt_eblast : tactic unit := using_smt $ intros >> try simp >> try eblast
 meta def smt_ematch : tactic unit := using_smt $ intros >> add_lemmas_from_facts >> try ematch
 
 meta def pointwise (and_then : tactic unit) : tactic unit :=
@@ -22,8 +23,9 @@ do cs ← attribute.get_instances `pointwise,
 
 attribute [pointwise] funext
 
-meta def blast : tactic unit := smt_simp >> pointwise blast
+meta def blast        : tactic unit := smt_eblast >> pointwise blast
 
+-- In a timing test on 2017-02-18, I found that using `abstract { blast }` instead of just `blast` resulted in a 5x speed-up!
 notation `♮` := by abstract { blast }
 
 @[pointwise] lemma {u v} pair_equality {α : Type u} {β : Type v} { X: α × β }: (X^.fst, X^.snd) = X := begin induction X, blast end
@@ -49,6 +51,7 @@ structure Category :=
 
 attribute [simp] Category.left_identity
 attribute [simp] Category.right_identity
+attribute [ematch] Category.associativity
 
 @[reducible] definition CategoryOfTypes : Category :=
 {
@@ -76,6 +79,7 @@ structure Functor (C : Category.{ u1 v1 }) (D : Category.{ u2 v2 }) :=
 
 attribute [simp] Functor.identities
 attribute [simp] Functor.functoriality
+attribute [ematch] Functor.functoriality
 
 -- We define a coercion so that we can write `F X` for the functor `F` applied to the object `X`.
 -- One can still write out `onObjects F X` when needed.
@@ -108,6 +112,8 @@ structure NaturalTransformation { C D : Category } ( F G : Functor C D ) :=
   (naturality: ∀ { X Y : C^.Obj } (f : C^.Hom X Y),
      D^.compose (F^.onMorphisms f) (components Y) = D^.compose (components X) (G^.onMorphisms f))
 
+attribute [ematch] NaturalTransformation.naturality
+
 -- This defines a coercion so we can write `α X` for `components α X`.
 instance NaturalTransformation_to_components { C D : Category } { F G : Functor C D } : has_coe_to_fun (NaturalTransformation F G) :=
 { F   := λ f, Π X : C^.Obj, D^.Hom (F X) (G X),
@@ -139,12 +145,7 @@ instance NaturalTransformation_to_components { C D : Category } { F G : Functor 
   ( β : NaturalTransformation G H ) : NaturalTransformation F H :=
   {
     components := λ X, D^.compose (α X) (β X),
-    naturality := begin
-                    blast,
-                    begin[smt]
-                      eblast_using [ Category.associativity, NaturalTransformation.naturality ]
-                    end,
-                  end
+    naturality := ♮
   }
 
 @[reducible] definition horizontal_composition_of_NaturalTransformations
@@ -155,12 +156,7 @@ instance NaturalTransformation_to_components { C D : Category } { F G : Functor 
   ( β : NaturalTransformation H I ) : NaturalTransformation (FunctorComposition F H) (FunctorComposition G I) :=
   {
     components := λ X : C^.Obj, E^.compose (β (F X)) (I^.onMorphisms (α X)),
-    naturality := begin
-                    blast,
-                    begin[smt]
-                      eblast_using [ Category.associativity, Functor.functoriality, NaturalTransformation.naturality ]
-                    end,
-                  end
+    naturality := ♮
   }
 
 @[reducible] definition whisker_on_left
@@ -188,12 +184,7 @@ instance NaturalTransformation_to_components { C D : Category } { F G : Functor 
 
   left_identity  := ♮,
   right_identity := ♮,
-  associativity  := begin
-                      blast,
-                      begin[smt]
-                        eblast_using [ Category.associativity ]
-                      end
-                    end
+  associativity  := ♮
 }
 
 namespace ProductCategory
@@ -215,13 +206,7 @@ end ProductFunctor
 @[reducible] definition ProductNaturalTransformation { A B C D : Category } { F G : Functor A B } { H I : Functor C D } (α : NaturalTransformation F G) (β : NaturalTransformation H I) : NaturalTransformation (F × H) (G × I) :=
 {
   components := λ X, (α X^.fst, β X^.snd),
-  naturality :=
-  begin
-    blast,
-    begin[smt]
-      eblast_using [ NaturalTransformation.naturality ]
-    end
-  end
+  naturality := ♮
 }
 
 namespace ProductNaturalTransformation
@@ -299,13 +284,28 @@ definition MonoidalCategoryOfTypes : MonoidalCategory :=
 
 local attribute [reducible] lift_t coe_t coe_b
 
+@[simp] lemma bifunctor_identities
+  { C D E : Category }
+  ( X : C^.Obj ) ( Y : D^.Obj )
+  ( F : Functor (C × D) E )
+   : @Functor.onMorphisms _ _ F (X, Y) (X, Y) (C^.identity X, D^.identity Y) = E^.identity (F^.onObjects (X, Y))
+  := 
+  begin
+    rewrite F^.identities
+  end
+
+set_option pp.implicit true
+
 definition tensor_on_left { C: MonoidalCategory.{u v} } ( Z: C^.Obj ) : Functor.{u v u v} C C :=
 {
   onObjects := λ X, C^.tensorObjects Z X,
   onMorphisms := λ X Y f, C^.tensorMorphisms (C^.identity Z) f,
   identities := begin
                   blast,
-                  rewrite Functor.identities (C^.tensor),
+                  -- I wish this worked:
+                  -- apply bifunctor_identities
+                  -- it doesn't, but this one still does:
+                  rewrite Functor.identities (C^.tensor)
                 end,
   functoriality := begin
                       blast,
@@ -314,83 +314,83 @@ definition tensor_on_left { C: MonoidalCategory.{u v} } ( Z: C^.Obj ) : Functor.
                     end
 }
 
-@[reducible] definition pentagon_3step_1 ( C : MonoidalCategory.{ u v } ) :=
-  let α := C^.associator_transformation in
-  whisker_on_right
-    (α × IdentityNaturalTransformation (IdentityFunctor C))
-    C^.tensor
+-- @[reducible] definition pentagon_3step_1 ( C : MonoidalCategory.{ u v } ) :=
+--   let α := C^.associator_transformation in
+--   whisker_on_right
+--     (α × IdentityNaturalTransformation (IdentityFunctor C))
+--     C^.tensor
 
-@[reducible] definition pentagon_3step_2 ( C : MonoidalCategory.{ u v } ) :=
-  let α := C^.associator_transformation in
-  whisker_on_left
-    (FunctorComposition
-      (ProductCategoryAssociator C C C × IdentityFunctor C)
-      ((IdentityFunctor C × C^.tensor) × IdentityFunctor C))
-    α
+-- @[reducible] definition pentagon_3step_2 ( C : MonoidalCategory.{ u v } ) :=
+--   let α := C^.associator_transformation in
+--   whisker_on_left
+--     (FunctorComposition
+--       (ProductCategoryAssociator C C C × IdentityFunctor C)
+--       ((IdentityFunctor C × C^.tensor) × IdentityFunctor C))
+--     α
 
-@[reducible] definition pentagon_3step_3 ( C : MonoidalCategory.{ u v } ) :=
-  let α := C^.associator_transformation in
-  whisker_on_left
-    (FunctorComposition
-      (ProductCategoryAssociator C C C × IdentityFunctor C)
-      (ProductCategoryAssociator C (C × C) C))
-    (whisker_on_right
-      (IdentityNaturalTransformation (IdentityFunctor C) × α)
-      C^.tensor)
+-- @[reducible] definition pentagon_3step_3 ( C : MonoidalCategory.{ u v } ) :=
+--   let α := C^.associator_transformation in
+--   whisker_on_left
+--     (FunctorComposition
+--       (ProductCategoryAssociator C C C × IdentityFunctor C)
+--       (ProductCategoryAssociator C (C × C) C))
+--     (whisker_on_right
+--       (IdentityNaturalTransformation (IdentityFunctor C) × α)
+--       C^.tensor)
 
-@[reducible] definition pentagon_3step ( C : MonoidalCategory.{ u v } ) :=
-  vertical_composition_of_NaturalTransformations
-    (vertical_composition_of_NaturalTransformations
-      (pentagon_3step_1 C)
-      (pentagon_3step_2 C))
-    (pentagon_3step_3 C)
+-- @[reducible] definition pentagon_3step ( C : MonoidalCategory.{ u v } ) :=
+--   vertical_composition_of_NaturalTransformations
+--     (vertical_composition_of_NaturalTransformations
+--       (pentagon_3step_1 C)
+--       (pentagon_3step_2 C))
+--     (pentagon_3step_3 C)
 
-@[reducible] definition pentagon_2step_1 ( C : MonoidalCategory.{ u v } ) :=
-  let α := C^.associator_transformation in
-  whisker_on_left
-    ((C^.tensor × IdentityFunctor C) × IdentityFunctor C)
-    α
+-- @[reducible] definition pentagon_2step_1 ( C : MonoidalCategory.{ u v } ) :=
+--   let α := C^.associator_transformation in
+--   whisker_on_left
+--     ((C^.tensor × IdentityFunctor C) × IdentityFunctor C)
+--     α
 
-@[reducible] definition pentagon_2step_2 ( C : MonoidalCategory.{ u v } ) :=
-  let α := C^.associator_transformation in
-  whisker_on_left
-    (FunctorComposition
-      (ProductCategoryAssociator (C × C) C C)
-      (IdentityFunctor (C × C) × C^.tensor))
-    α
+-- @[reducible] definition pentagon_2step_2 ( C : MonoidalCategory.{ u v } ) :=
+--   let α := C^.associator_transformation in
+--   whisker_on_left
+--     (FunctorComposition
+--       (ProductCategoryAssociator (C × C) C C)
+--       (IdentityFunctor (C × C) × C^.tensor))
+--     α
 
-@[reducible] definition pentagon_2step ( C : MonoidalCategory.{ u v } ) :=
-  vertical_composition_of_NaturalTransformations
-    (pentagon_2step_1 C)
-    (pentagon_2step_2 C)
+-- @[reducible] definition pentagon_2step ( C : MonoidalCategory.{ u v } ) :=
+--   vertical_composition_of_NaturalTransformations
+--     (pentagon_2step_1 C)
+--     (pentagon_2step_2 C)
 
--- lemma bifunctor_identities
---   { C D E: Category }
---   ( X : C^.Obj ) ( Y: D^.Obj )
---   ( F : Functor (C × D) E )
---    : @Functor.onMorphisms _ _ F (X,Y) (X,Y) (C^.identity X, D^.identity Y) = E^.identity (F^.onObjects (X, Y))
---   := 
+-- -- lemma bifunctor_identities
+-- --   { C D E: Category }
+-- --   ( X : C^.Obj ) ( Y: D^.Obj )
+-- --   ( F : Functor (C × D) E )
+-- --    : @Functor.onMorphisms _ _ F (X,Y) (X,Y) (C^.identity X, D^.identity Y) = E^.identity (F^.onObjects (X, Y))
+-- --   := 
+-- --   begin
+-- --     rewrite F^.identities
+-- --   end
+
+-- -- adding these attributes increased compile time from 1.5 minutes to 13 minutes. :-(
+-- -- attribute [simp] MonoidalCategory.left_identity
+-- -- attribute [simp] MonoidalCategory.right_identity
+
+-- lemma pentagon_in_terms_of_natural_transformations
+--   ( C : MonoidalCategory ) :
+--   pentagon_2step C = pentagon_3step C :=
 --   begin
---     rewrite F^.identities
+--     blast, 
+--     induction X with PQR S,
+--     induction PQR with PQ R,
+--     induction PQ with P Q,
+--     pose p := C^.pentagon P Q R S,
+--     -- notice that the hypothesis p is gross, until we blast!
+--     blast,
+--     -- I don't understand why this isn't being done by blast automatically: Functor.identities has [simp].
+--     -- Moreover, I don't understand why `rewrite bifunctor_identities` doesn't apply here.
+--     repeat { rewrite C^.tensor^.identities <|> rewrite C^.left_identity <|> rewrite C^.right_identity },
+--     blast
 --   end
-
--- adding these attributes increased compile time from 1.5 minutes to 13 minutes. :-(
--- attribute [simp] MonoidalCategory.left_identity
--- attribute [simp] MonoidalCategory.right_identity
-
-lemma pentagon_in_terms_of_natural_transformations
-  ( C : MonoidalCategory ) :
-  pentagon_2step C = pentagon_3step C :=
-  begin
-    blast, 
-    induction X with PQR S,
-    induction PQR with PQ R,
-    induction PQ with P Q,
-    pose p := C^.pentagon P Q R S,
-    -- notice that the hypothesis p is gross, until we blast!
-    blast,
-    -- I don't understand why this isn't being done by blast automatically: Functor.identities has [simp].
-    -- Moreover, I don't understand why `rewrite bifunctor_identities` doesn't apply here.
-    repeat { rewrite C^.tensor^.identities <|> rewrite C^.left_identity <|> rewrite C^.right_identity },
-    blast
-  end
