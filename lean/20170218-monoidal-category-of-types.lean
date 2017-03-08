@@ -53,7 +53,7 @@ attribute [simp] Category.left_identity
 attribute [simp] Category.right_identity
 attribute [ematch] Category.associativity
 
-@[reducible] definition CategoryOfTypes : Category :=
+definition CategoryOfTypes : Category :=
 {
     Obj := Type u,
     Hom := λ a b, a → b,
@@ -87,7 +87,7 @@ instance Functor_to_onObjects { C D : Category }: has_coe_to_fun (Functor C D) :
 { F   := λ f, C^.Obj -> D^.Obj,
   coe := Functor.onObjects }
 
-@[reducible] definition IdentityFunctor ( C: Category ) : Functor C C :=
+definition IdentityFunctor ( C: Category ) : Functor C C :=
 {
   onObjects     := id,
   onMorphisms   := λ _ _ f, f,
@@ -95,7 +95,7 @@ instance Functor_to_onObjects { C D : Category }: has_coe_to_fun (Functor C D) :
   functoriality := ♮
 }
 
-@[reducible] definition FunctorComposition { C D E : Category } ( F : Functor C D ) ( G : Functor D E ) : Functor C E :=
+definition FunctorComposition { C D E : Category } ( F : Functor C D ) ( G : Functor D E ) : Functor C E :=
 {
   onObjects     := λ X, G (F X),
   onMorphisms   := λ _ _ f, G^.onMorphisms (F^.onMorphisms f),
@@ -103,9 +103,9 @@ instance Functor_to_onObjects { C D : Category }: has_coe_to_fun (Functor C D) :
   functoriality := ♮
 }
 
-namespace Functor
-  notation F `∘` G := FunctorComposition F G
-end Functor
+-- namespace Functor
+--   notation F `∘` G := FunctorComposition F G
+-- end Functor
 
 structure NaturalTransformation { C D : Category } ( F G : Functor C D ) :=
   (components: Π X : C^.Obj, D^.Hom (F X) (G X))
@@ -132,13 +132,13 @@ instance NaturalTransformation_to_components { C D : Category } { F G : Functor 
     by subst hc
   end
 
-@[reducible] definition IdentityNaturalTransformation { C D : Category } (F : Functor C D) : NaturalTransformation F F :=
+definition IdentityNaturalTransformation { C D : Category } (F : Functor C D) : NaturalTransformation F F :=
   {
     components := λ X, D^.identity (F X),
     naturality := ♮
   }
 
-@[reducible] definition vertical_composition_of_NaturalTransformations
+definition vertical_composition_of_NaturalTransformations
   { C D : Category }
   { F G H : Functor C D }
   ( α : NaturalTransformation F G )
@@ -148,7 +148,7 @@ instance NaturalTransformation_to_components { C D : Category } { F G : Functor 
     naturality := ♮
   }
 
-@[reducible] definition horizontal_composition_of_NaturalTransformations
+definition horizontal_composition_of_NaturalTransformations
   { C D E : Category }
   { F G : Functor C D }
   { H I : Functor D E }
@@ -156,10 +156,14 @@ instance NaturalTransformation_to_components { C D : Category } { F G : Functor 
   ( β : NaturalTransformation H I ) : NaturalTransformation (FunctorComposition F H) (FunctorComposition G I) :=
   {
     components := λ X : C^.Obj, E^.compose (β (F X)) (I^.onMorphisms (α X)),
-    naturality := ♮
+    naturality := begin
+                    blast,
+                    unfold FunctorComposition, 
+                    blast
+                  end
   }
 
-@[reducible] definition whisker_on_left
+definition whisker_on_left
   { C D E : Category }
   ( F : Functor C D )
   { G H : Functor D E }
@@ -167,7 +171,7 @@ instance NaturalTransformation_to_components { C D : Category } { F G : Functor 
   NaturalTransformation (FunctorComposition F G) (FunctorComposition F H) :=
   horizontal_composition_of_NaturalTransformations (IdentityNaturalTransformation F) α
 
-@[reducible] definition whisker_on_right
+definition whisker_on_right
   { C D E : Category }
   { F G : Functor C D }
   ( α : NaturalTransformation F G )
@@ -175,7 +179,7 @@ instance NaturalTransformation_to_components { C D : Category } { F G : Functor 
   NaturalTransformation (FunctorComposition F H) (FunctorComposition G H) :=
   horizontal_composition_of_NaturalTransformations α (IdentityNaturalTransformation H)
 
-@[reducible] definition ProductCategory (C : Category.{u1 v1}) (D : Category.{u2 v2}) : Category :=
+definition ProductCategory (C : Category.{u1 v1}) (D : Category.{u2 v2}) : Category :=
 {
   Obj      := C^.Obj × D^.Obj,
   Hom      := (λ X Y : C^.Obj × D^.Obj, C^.Hom (X^.fst) (Y^.fst) × D^.Hom (X^.snd) (Y^.snd)),
@@ -191,29 +195,43 @@ namespace ProductCategory
   notation C `×` D := ProductCategory C D
 end ProductCategory
 
-@[reducible] definition ProductFunctor { A B C D : Category } ( F : Functor A B ) ( G : Functor C D ) : Functor (A × C) (B × D) :=
+definition ProductFunctor { A B C D : Category } ( F : Functor A B ) ( G : Functor C D ) : Functor (A × C) (B × D) :=
 {
   onObjects     := λ X, (F X^.fst, G X^.snd),
   onMorphisms   := λ _ _ f, (F^.onMorphisms f^.fst, G^.onMorphisms f^.snd),
-  identities    := ♮,
-  functoriality := ♮
+  identities    := begin
+                     blast,
+                     unfold ProductCategory,
+                     blast,
+                   end,
+  functoriality := begin
+                     blast,
+                     unfold ProductCategory,
+                     blast
+                   end
 }
 
 namespace ProductFunctor
   notation F `×` G := ProductFunctor F G
 end ProductFunctor
 
-@[reducible] definition ProductNaturalTransformation { A B C D : Category } { F G : Functor A B } { H I : Functor C D } (α : NaturalTransformation F G) (β : NaturalTransformation H I) : NaturalTransformation (F × H) (G × I) :=
+definition ProductNaturalTransformation { A B C D : Category } { F G : Functor A B } { H I : Functor C D } (α : NaturalTransformation F G) (β : NaturalTransformation H I) : NaturalTransformation (F × H) (G × I) :=
 {
   components := λ X, (α X^.fst, β X^.snd),
-  naturality := ♮
+  naturality := begin
+                  blast,
+                  unfold ProductFunctor,
+                  blast,
+                  unfold ProductCategory,
+                  blast
+                end
 }
 
 namespace ProductNaturalTransformation
   notation α `×` β := ProductNaturalTransformation α β
 end ProductNaturalTransformation
 
-@[reducible] definition ProductCategoryAssociator
+definition ProductCategoryAssociator
   ( C : Category.{ u1 v1 } )
   ( D : Category.{ u2 v2 } )
   ( E : Category.{ u3 v3 } )
@@ -227,9 +245,9 @@ end ProductNaturalTransformation
 
 @[reducible] definition TensorProduct ( C: Category ) := Functor ( C × C ) C
 
-@[reducible] definition left_associated_triple_tensor ( C : Category.{ u v } ) ( tensor : TensorProduct C ) : Functor ((C × C) × C) C :=
+definition left_associated_triple_tensor ( C : Category.{ u v } ) ( tensor : TensorProduct C ) : Functor ((C × C) × C) C :=
   FunctorComposition (tensor × IdentityFunctor C) tensor
-@[reducible] definition right_associated_triple_tensor ( C : Category.{ u v } ) ( tensor : TensorProduct C ) : Functor (C × (C × C)) C :=
+definition right_associated_triple_tensor ( C : Category.{ u v } ) ( tensor : TensorProduct C ) : Functor (C × (C × C)) C :=
   FunctorComposition (IdentityFunctor C × tensor) tensor
 
 @[reducible] definition Associator { C : Category.{ u v } } ( tensor : TensorProduct C ) := 
@@ -237,7 +255,7 @@ end ProductNaturalTransformation
     (left_associated_triple_tensor C tensor) 
     (FunctorComposition (ProductCategoryAssociator C C C) (right_associated_triple_tensor C tensor))
 
-@[reducible] definition Pentagon { C : Category } { tensor : TensorProduct C } ( associator : Associator tensor ) :=
+definition Pentagon { C : Category } { tensor : TensorProduct C } ( associator : Associator tensor ) :=
   let α ( X Y Z : C^.Obj ) := associator ((X, Y), Z) in
   let tensorObjects ( X Y : C^.Obj ) := tensor^.onObjects (X, Y) in
   let tensorMorphisms { W X Y Z : C^.Obj } ( f : C^.Hom W X ) ( g : C^.Hom Y Z ) : C^.Hom (tensorObjects W Y) (tensorObjects X Z) := tensor^.onMorphisms (f, g) in
@@ -256,7 +274,7 @@ instance MonoidalCategory_coercion : has_coe MonoidalCategory.{u v} Category.{u 
 
 @[reducible] definition MonoidalCategory.tensorObjects   ( C : MonoidalCategory ) ( X Y : C^.Obj )                                           : C^.Obj := C^.tensor (X, Y)
 @[reducible] definition MonoidalCategory.tensorMorphisms ( C : MonoidalCategory ) { W X Y Z : C^.Obj } ( f : C^.Hom W X ) ( g : C^.Hom Y Z ) : C^.Hom (C^.tensor (W, Y)) (C^.tensor (X, Z)) := C^.tensor^.onMorphisms (f, g)
-@[reducible] definition MonoidalCategory.interchange
+@[ematch] definition MonoidalCategory.interchange
   ( C : MonoidalCategory )
   { U V W X Y Z: C^.Obj }
   ( f : C^.Hom U V )( g : C^.Hom V W )( h : C^.Hom X Y )( k : C^.Hom Y Z ) :
@@ -279,7 +297,11 @@ definition MonoidalCategoryOfTypes : MonoidalCategory :=
     components := λ p, λ t, (t.1.1,(t.1.2, t.2)),
     naturality := ♮
   },
-  pentagon := ♮
+  pentagon := begin
+                blast,
+                unfold Pentagon,
+                blast
+              end
 }
 
 local attribute [reducible] lift_t coe_t coe_b
@@ -287,12 +309,14 @@ local attribute [reducible] lift_t coe_t coe_b
 @[simp] lemma bifunctor_identities
   { C D E : Category }
   ( X : C^.Obj ) ( Y : D^.Obj )
-  ( F : Functor (C × D) E )
-   : @Functor.onMorphisms _ _ F (X, Y) (X, Y) (C^.identity X, D^.identity Y) = E^.identity (F^.onObjects (X, Y))
-  := 
+  ( F : Functor (C × D) E ) : @Functor.onMorphisms _ _ F (X, Y) (X, Y) (C^.identity X, D^.identity Y) = E^.identity (F^.onObjects (X, Y)) :=
   begin
-    rewrite F^.identities
-  end
+    blast,
+    assert p : (C^.identity X, D^.identity Y) = (C × D)^.identity (X, Y), blast,
+    rewrite p,
+    blast
+  end 
+
 
 set_option pp.implicit true
 
@@ -300,15 +324,10 @@ definition tensor_on_left { C: MonoidalCategory.{u v} } ( Z: C^.Obj ) : Functor.
 {
   onObjects := λ X, C^.tensorObjects Z X,
   onMorphisms := λ X Y f, C^.tensorMorphisms (C^.identity Z) f,
-  identities := begin
-                  blast,
-                  -- I wish this worked:
-                  -- apply bifunctor_identities
-                  -- it doesn't, but this one still does:
-                  rewrite Functor.identities (C^.tensor)
-                end,
+  identities := ♮,
   functoriality := begin
                       blast,
+                      -- TODO I'd hope the blast could just do these steps: interchange has [ematch], and left_identity has [simp].
                       rewrite - C^.interchange,
                       rewrite C^.left_identity
                     end
@@ -363,16 +382,6 @@ definition tensor_on_left { C: MonoidalCategory.{u v} } ( Z: C^.Obj ) : Functor.
 --   vertical_composition_of_NaturalTransformations
 --     (pentagon_2step_1 C)
 --     (pentagon_2step_2 C)
-
--- -- lemma bifunctor_identities
--- --   { C D E: Category }
--- --   ( X : C^.Obj ) ( Y: D^.Obj )
--- --   ( F : Functor (C × D) E )
--- --    : @Functor.onMorphisms _ _ F (X,Y) (X,Y) (C^.identity X, D^.identity Y) = E^.identity (F^.onObjects (X, Y))
--- --   := 
--- --   begin
--- --     rewrite F^.identities
--- --   end
 
 -- -- adding these attributes increased compile time from 1.5 minutes to 13 minutes. :-(
 -- -- attribute [simp] MonoidalCategory.left_identity
