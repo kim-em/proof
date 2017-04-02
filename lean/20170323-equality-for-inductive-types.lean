@@ -1,15 +1,7 @@
 open tactic
 open smt_tactic
-
-
 meta def smt_eblast : tactic unit := using_smt $ intros >> try dsimp >> try simp >> try eblast
-
-
-
-meta def blast  : tactic unit := intros >> try dsimp >> try simp >> try smt_eblast
-
--- In a timing test on 2017-02-18, I found that using `abstract { blast }` instead of just `blast` resulted in a 5x speed-up!
-notation `♮` := by abstract { blast }
+notation `♮` := by abstract { smt_eblast }
 
 universe variables u v
 
@@ -18,11 +10,7 @@ structure Category :=
   (Hom : Obj → Obj → Type v)
   (identity : Π X : Obj, Hom X X)
   (compose  : Π { X Y Z : Obj }, Hom X Y → Hom Y Z → Hom X Z)
-
   (left_identity  : ∀ { X Y : Obj } (f : Hom X Y), compose (identity X) f = f)
-  (right_identity : ∀ { X Y : Obj } (f : Hom X Y), compose f (identity Y) = f)
-  (associativity  : ∀ { W X Y Z : Obj } (f : Hom W X) (g : Hom X Y) (h : Hom Y Z),
-    compose (compose f g) h = compose f (compose g h))
 
 universe variables u1 v1 u2 v2 u3 v3
 
@@ -53,4 +41,15 @@ attribute [simp,ematch] Functor.functoriality
   onMorphisms   := λ _ _ f, G^.onMorphisms (F^.onMorphisms f),
   identities    := ♮,
   functoriality := ♮
+}
+
+@[reducible] definition CategoryOfCategoriesAndFunctors : Category := {
+  Obj := Category.{u1 v1},
+  Hom := λ C D, Functor C D,
+  identity := λ C, IdentityFunctor C,
+  compose  := λ _ _ _ F G, FunctorComposition F G,
+  left_identity  := begin
+                      intros,
+                      dsimp, trivial
+                    end
 }
