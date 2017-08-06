@@ -19,7 +19,16 @@ do when (expr.is_local_constant h = ff) (fail "tactic simp_at failed, the given 
    (new_htype, heq) ← simplify S htype cfg,
    rewrite_at_core reducible tt tt occurrences.all ff heq h
 
-lemma {u v} dependent_pair_equality {α : Type u} {Z : α → Type v} { X Y : Σ a : α, Z a } ( p1 : X.1 = Y.1 ) ( p2 : @eq.rec α X.1 Z X.2 Y.1 p1 = Y.2 ) : X = Y := begin induction X, induction Y, simp at p1, end
+-- set_option pp.all true
+
+lemma {u v} dependent_pair_equality {α : Type u} {Z : α → Type v} { X Y : Σ a : α, Z a } ( p1 : X.1 = Y.1 ) ( p2 : @eq.rec α X.1 Z X.2 Y.1 p1 = Y.2 ) : X = Y :=
+begin
+  induction X,
+  induction Y,
+  dsimp at p1,
+  dsimp at p2,
+  
+end
 
 -- FIXME this repeatedly resimplifies hypotheses, if they can't be cleared. :-(
 meta def simp_hypotheses : tactic unit :=
