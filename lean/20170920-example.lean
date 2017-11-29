@@ -40,16 +40,26 @@ induction n,
 }
 end
 
+-- set_option pp.all true
+
 def infinitely_many_even_integers_2 : ∀ n : ℕ, ∃ m ≥ n, even m :=
 begin
 intro n,
 by_cases (even n),
 {
   existsi n,
-  admit -- how do we obtain proof that n ≥ n?
+  existsi _,
+  assumption,
+  unfold ge,
 },
 {
   existsi (n+1),
-  admit
+  existsi _,
+  unfold even,
+  assumption,
+  -- how do we obtain a proof that n + 1 ≥ n? This is pretty gross.
+  unfold ge,
+  unfold has_le.le,
+  exact less_than_or_equal.step (less_than_or_equal.refl n),
 }
 end
